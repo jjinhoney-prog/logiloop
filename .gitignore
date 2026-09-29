@@ -10,3 +10,9 @@ out/
 *전략백서*.md
 *전략백서*.md
 .vercel
+# TypeScript / Next.js generated
+next-env.d.ts
+*.tsbuildinfo
+# Playwright
+playwright-report/
+test-results/

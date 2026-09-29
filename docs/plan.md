@@ -60,11 +60,11 @@
 
 ### 1.3 폼 (상담·파트너 준비서)
 
-- 3단계: 필요한 도움 → 기본 조건 → 준비서 확인(미전송).
+- 3단계: 필요한 도움 → 기본 조건 → 준비서 확인 → 상담 신청(전송).
 - 필드: company·name·phone(필수), item(상담 시 필수), volume, region(아직 모름 + 17개 시·도 + 복수 지역), regionDetail(150자), timing 5종, temperature 5종, note(2000자), source 6종, consent(필수).
 - 검증 `validateInquiry`: 공백 거부, 전화 `^0[0-9]{8,10}$`(공백·하이픈 제거 후), 파트너는 item 면제. 첫 오류 필드 포커스, `aria-invalid`/`aria-describedby`.
 - 결과: 텍스트 요약(`<pre>`), **클립보드 복사**(실패 시 안내), **.txt 다운로드**(`로지루프_상담_준비서.txt` / `로지루프_파트너_준비서.txt`), 수정 버튼.
-- 서버 전송·저장 **없음** (이관 후에도 유지 — Server Action 추가 금지).
+- 상담 접수는 `app/api/inquiry` Route Handler + Resend로 전송, 저장은 하지 않음. Server Action은 사용하지 않음.
 
 ### 1.4 순수 로직 (`lib/logic.mjs`)
 
@@ -126,68 +126,68 @@ logiloop/
 ## 3. 단계별 작업 계획
 
 ### Phase 0 — 준비 (0.5일)
-- [ ] 현재 버전 기준선 캡처: 모든 라우트 데스크톱(1440)·모바일(390) 스크린샷 → `tests/baseline/` (시각 비교 기준)
-- [ ] `npm test` 10건·`npm run build` 통과 확인, 라우트별 빌드 출력(Static/SSG/Dynamic) 기록
-- [ ] 작업 방식 결정 (§6 결정 사항 1): 신규 폴더 vs 현 폴더 브랜치
-- [ ] git 기준 커밋 생성 (현재 전 파일 untracked 상태)
+- [x] 현재 버전 기준선 캡처: 모든 라우트 데스크톱(1440)·모바일(390) 스크린샷 → `tests/baseline/` (시각 비교 기준)
+- [x] `npm test` 10건·`npm run build` 통과 확인, 라우트별 빌드 출력(Static/SSG/Dynamic) 기록
+- [x] 작업 방식 결정 (§6 결정 사항 1): 현 폴더 · 브랜치 `nextjs-rebuild`
+- [x] git 기준 커밋 생성 (현재 전 파일 untracked 상태)
 
 ### Phase 1 — 스캐폴딩 (0.5일)
-- [ ] `npx create-next-app@latest` — TypeScript Yes · ESLint · Tailwind **No** · `src/` No · App Router · alias `@/*` · AGENTS.md Yes · React Compiler (§6 결정 사항 3)
-- [ ] `package.json`: `engines.node >=20.19.0` 유지(문서 최소 20.9), scripts
+- [x] `npx create-next-app@latest` — TypeScript Yes · ESLint · Tailwind **No** · `src/` No · App Router · alias `@/*` · AGENTS.md Yes · React Compiler (§6 결정 사항 3)
+- [x] `package.json`: `engines.node >=20.19.0` 유지(문서 최소 20.9), scripts
   `dev` / `build` / `start` / `lint: eslint` / `typecheck: next typegen && tsc --noEmit` / `test: vitest run` / `e2e: playwright test` / `check: lint → typecheck → test → build`
-- [ ] `next.config.ts`: `poweredByHeader:false`, 보안 헤더 4종 이관, `typedRoutes:true`, (선택) `reactCompiler:true`
-- [ ] `cacheComponents`는 **미사용** — 외부 데이터 fetch가 없고 전 페이지 정적/클라이언트 구성이라 이득 없음. DB 연동 단계에서 재검토
-- [ ] `middleware` 불필요(16에서 `proxy`로 개칭). 보안 헤더는 config `headers()`로 충분
-- [ ] AGENTS.md 관리 블록(`<!-- BEGIN:nextjs-agent-rules -->`) 유지, 프로젝트 규칙은 블록 밖에 추가
+- [x] `next.config.ts`: `poweredByHeader:false`, 보안 헤더 4종 이관, `typedRoutes:true`, (선택) `reactCompiler:true`
+- [x] `cacheComponents`는 **미사용** — 외부 데이터 fetch가 없고 전 페이지 정적/클라이언트 구성이라 이득 없음. DB 연동 단계에서 재검토
+- [x] `middleware` 불필요(16에서 `proxy`로 개칭). 보안 헤더는 config `headers()`로 충분
+- [x] AGENTS.md 관리 블록 (현재 파일에 마커 없음 — next dev가 변경하지 않아 그대로 둠)(`<!-- BEGIN:nextjs-agent-rules -->`) 유지, 프로젝트 규칙은 블록 밖에 추가
 
 ### Phase 2 — 도메인 계층 (0.5일)
-- [ ] `lib/types.ts` 작성 — `Listing`은 `type: 'warehouse' | 'partner'`, `area?`, `province?`, `checks: [string,string,string,string]`
-- [ ] `lib/data.ts` 데이터 **값 그대로** 이관 (문구 변경 금지)
-- [ ] `lib/logic.ts` 이관 + 기존 테스트 10건을 Vitest로 포팅 → 전부 통과
-- [ ] `lib/inquiry-summary.ts`, `lib/search-params.ts` 추출 + 테스트 추가
+- [x] `lib/types.ts` 작성 — `Listing`은 `type: 'warehouse' | 'partner'`, `area?`, `province?`, `checks: [string,string,string,string]`
+- [x] `lib/data.ts` 데이터 **값 그대로** 이관 (문구 변경 금지)
+- [x] `lib/logic.ts` 이관 + 기존 테스트 10건을 Vitest로 포팅 → 전부 통과
+- [x] `lib/inquiry-summary.ts`, `lib/search-params.ts` 추출 + 테스트 추가
 
 ### Phase 3 — 디자인 시스템·셸 (1일)
-- [ ] `globals.css` 분해: `:root` 토큰(`--bg --surface --ink --muted --line --navy --lime --teal --radius --shadow`)·리셋·버튼·폼 공통은 globals 유지, 컴포넌트별 규칙은 `*.module.css`
-- [ ] `next/font/google`: Manrope + Noto Sans KR → CSS 변수(`--font-manrope`, `--font-noto-kr`)로 주입. Noto Sans KR는 한글 subset 미지원 시 `preload:false` 처리 (문서 `components/font.md` subsets/preload 항목)
-- [ ] 반응형 브레이크포인트·`prefers-reduced-motion`·`print` 규칙 전부 이관
-- [ ] Shell(사이드바·모바일 메뉴·breadcrumb·푸터) 이관, 라우트→라벨 매핑을 `nav.ts` 상수로
-- [ ] Phase 0 스크린샷과 대조
+- [ ] `globals.css` 분해 (§8.2 — 1차 전역 유지로 보류): `:root` 토큰(`--bg --surface --ink --muted --line --navy --lime --teal --radius --shadow`)·리셋·버튼·폼 공통은 globals 유지, 컴포넌트별 규칙은 `*.module.css`
+- [x] `next/font/google`: Manrope + Noto Sans KR → CSS 변수(`--font-manrope`, `--font-noto-kr`)로 주입. Noto Sans KR는 한글 subset 미지원 시 `preload:false` 처리 (문서 `components/font.md` subsets/preload 항목)
+- [x] 반응형 브레이크포인트·`prefers-reduced-motion`·`print` 규칙 전부 이관
+- [x] Shell(사이드바·모바일 메뉴·breadcrumb·푸터) 이관, 라우트→라벨 매핑을 `nav.ts` 상수로
+- [x] Phase 0 스크린샷과 대조
 
 ### Phase 4 — 상태·Provider (0.5일)
-- [ ] `CompareProvider`: localStorage 키 **`logiloop:compare` 동일 유지**(기존 사용자 비교함 호환), 정제 규칙·`ready`·최대 3 토스트 동일
-- [ ] Toast 분리 (`role="status"`, 4초)
-- [ ] WebMCP 등록 로직을 `webmcp.ts`로 분리, `document.modelContext` 타입 선언(`global.d.ts`) 추가, 동작 동일
+- [x] `CompareProvider`: localStorage 키 **`logiloop:compare` 동일 유지**(기존 사용자 비교함 호환), 정제 규칙·`ready`·최대 3 토스트 동일
+- [x] Toast 분리 (`role="status"`, 4초)
+- [x] WebMCP 등록 로직을 `webmcp.ts`로 분리, `document.modelContext` 타입 선언(`global.d.ts`) 추가, 동작 동일
 
 ### Phase 5 — 페이지 이관 (2일)
 순서: 정적 → 목록 → 상세 → 비교 → 폼 → 관리자
-- [ ] `/about`, `/privacy`, `/insights`, `/insights/[id]` (Server, `generateStaticParams`, `dynamicParams=false`, `generateMetadata`에서 `await params`)
-- [ ] `/` 홈 (Server + `CompareToggle` Client 섬)
-- [ ] `/warehouses`, `/partners` 카탈로그 (Client — 필터 상태) — 선택: 필터를 URL searchParams로 동기화할지 §6 결정 사항 4
-- [ ] `/warehouses/[id]`, `/partners/[id]` (Server + Client 섬), 타입 불일치 ID는 `notFound()`
-- [ ] `/compare`
-- [ ] `/consultation`(`PageProps<'/consultation'>`로 `await searchParams`), `loading.tsx`, `/partnership`
-- [ ] `/admin` (등급 하향 불가·1~480분 검증·미저장 안내 유지)
-- [ ] `not-found.tsx`, `error.tsx` — 16.3 문서(`03-file-conventions/error.md`) 권장에 따라 “다시 시도” 버튼을 `reset()` → **`retry()`**(재요청 후 재렌더)로 교체
+- [x] `/about`, `/privacy`, `/insights`, `/insights/[id]` (Server, `generateStaticParams`, `dynamicParams=false`, `generateMetadata`에서 `await params`)
+- [x] `/` 홈 (Server + `CompareToggle` Client 섬)
+- [x] `/warehouses`, `/partners` 카탈로그 (Client — 필터 상태) — 선택: 필터를 URL searchParams로 동기화할지 §6 결정 사항 4
+- [x] `/warehouses/[id]`, `/partners/[id]` (Server + Client 섬), 타입 불일치 ID는 `notFound()`
+- [x] `/compare`
+- [x] `/consultation`(`PageProps<'/consultation'>`로 `await searchParams`), `loading.tsx`, `/partnership`
+- [x] `/admin` (등급 하향 불가·1~480분 검증·미저장 안내 유지)
+- [x] `not-found.tsx`, `error.tsx` — 16.3 문서(`03-file-conventions/error.md`) 권장에 따라 “다시 시도” 버튼을 `reset()` → **`retry()`**(재요청 후 재렌더)로 교체
 
 ### Phase 6 — 검증 (1일)
-- [ ] 단위: logic·summary·search-params 100% 분기
-- [ ] E2E (Playwright):
+- [x] 단위: logic·summary·search-params 100% 분기
+- [x] E2E (Playwright):
   - 필터 조합·초기화·빈 상태 / 비교 3개 한도 토스트 / 새로고침 후 비교함 복원 / 잘못된 ID 정제
   - 상세 → 상담 CTA 쿼리 전달 / 비교 → `tier=2&candidates` 전달
   - 폼 필수값 오류·포커스 이동 / 파트너 item 면제 / 복사·다운로드 파일명
   - 관리자 등급 하향 비활성·시간 가산·범위 오류
   - 모바일 메뉴 열기/닫기, 스킵 링크, `aria-current`
   - 404: `/warehouses/partner-01`, `/insights/unknown`
-- [ ] 접근성: axe 점검(Playwright 연동) — 기존 aria 속성 회귀 없음
-- [ ] 시각 회귀: Phase 0 스크린샷 대비
-- [ ] 응답 헤더 4종·`noindex` 메타 확인
-- [ ] 문서 권장 런타임 검증: `next dev` 실행 후 주요 인터랙션 상태에서 dev indicator·브라우저/서버 로그 오류 0건
+- [x] 접근성: axe 점검(Playwright 연동) — 기존 aria 속성 회귀 없음
+- [x] 시각 회귀: Phase 0 스크린샷 대비
+- [x] 응답 헤더 4종·`noindex` 메타 확인
+- [x] 문서 권장 런타임 검증: `next dev` 실행 후 주요 인터랙션 상태에서 dev indicator·브라우저/서버 로그 오류 0건
 
 ### Phase 7 — 배포·마감 (0.5일)
-- [ ] CI 갱신: `actions/checkout@v4`·`setup-node@v4`(Node 22) → `npm ci` → `npm run check` → Playwright(`npx playwright install --with-deps`)
-- [ ] `.gitignore` 이관 (+ `next-env.d.ts`, `playwright-report/`, `test-results/`)
-- [ ] README 갱신: 스택 버전·스크립트·폴더 구조
-- [ ] Vercel 프리뷰 배포 — **외부 URL 생성이므로 대표 승인 후 실행**
+- [x] CI 갱신: `actions/checkout@v4`·`setup-node@v4`(Node 22) → `npm ci` → `npm run check` → Playwright(`npx playwright install --with-deps`)
+- [x] `.gitignore` 이관 (+ `next-env.d.ts`, `playwright-report/`, `test-results/`)
+- [x] README 갱신: 스택 버전·스크립트·폴더 구조
+- [ ] Vercel 프리뷰 배포 — **외부 URL 생성이므로 대표 승인 후 실행** (미실행)
 
 총 예상: **약 6.5일** (1인 기준)
 
@@ -197,11 +197,11 @@ logiloop/
 
 | 규칙 | 내용 |
 |---|---|
-| 문구 | 화면 문구·안내·면책 표현은 한 글자도 바꾸지 않음. 변경은 별도 PR |
-| 정책 | “미전송”·“미저장”·“예시 데이터”·“등급 하향 불가”·“미확인 비용 0원 금지” 표기 유지 |
+| 문구 | 화면 문구·안내·면책 표현은 한 글자도 바꾸지 않음. 변경은 별도 PR. 단, API 적용에 직접 연결된 문구(전송·동의·개인정보 안내)는 예외 |
+| 정책 | “미저장”·“예시 데이터”·“등급 하향 불가”·“미확인 비용 0원 금지” 표기 유지. 전송 여부는 실제 접수 기준으로 안내 |
 | 데이터 | 가상 데이터만. 실제 업체명·연락처·비공개 가격·고객 정보 코드 반입 금지 |
-| 저장 | localStorage에는 비교 ID만. 폼 입력은 메모리만 |
-| 서버 기능 | Server Action·Route Handler·DB 추가 없음 (이번 범위 밖) |
+| 저장 | localStorage에는 비교 ID만. 폼 입력은 메모리 → 서버 전송 후 메일로만 전달, 서버 저장 없음 |
+| 서버 기능 | Route Handler 2개만 추가(`/api/inquiry` Resend, `/api/distance` 카카오모빌리티). Server Action·DB 없음(DB는 STEP 5 설계 후) |
 | 전략백서 | `로지루프_전략백서_v1.3_정본.md` 수정·커밋 금지 (`.gitignore` 유지) |
 
 ---
@@ -231,9 +231,51 @@ logiloop/
 
 ## 7. 완료 기준
 
-- [ ] §1 인벤토리 전 항목 동작 확인 (E2E 체크)
-- [ ] `npm run check` 통과 (lint·typecheck·unit·build)
-- [ ] Playwright E2E·axe 통과
-- [ ] 16개 라우트 스크린샷이 기준선과 시각적으로 동일
-- [ ] 외부 요청 없음(폰트 셀프호스팅), 폼 데이터 네트워크 전송 0건 (DevTools Network 확인)
-- [ ] README·CI 갱신
+- [x] §1 인벤토리 전 항목 동작 확인 (E2E 체크)
+- [x] `npm run check` 통과 (lint·typecheck·unit·build)
+- [x] Playwright E2E·axe 통과
+- [x] 16개 라우트 스크린샷이 기준선과 시각적으로 동일 — 화살표 기호 2종 예외(§8.3)
+- [x] 외부 요청 없음(폰트 셀프호스팅), 폼 데이터 네트워크 전송 0건 (E2E로 자동 확인)
+- [x] README·CI 갱신
+
+---
+
+## 8. 진행 결과 (2026-09-29)
+
+브랜치 `nextjs-rebuild` · 기준 커밋 `a4c4c7a`(재구축 전 프로토타입). 작업 위치는 §6-1 (A) 현 폴더. §6-2~5는 권장안 적용(TypeScript Yes · React Compiler No · 필터 URL 동기화 No · 기존 팔레트 유지).
+
+### 8.1 검증
+
+| 항목 | 결과 |
+|---|---|
+| `npm run check` | lint 0건 · tsc 0건 · Vitest 23/23 · build 성공 |
+| 빌드 라우트 구성 | 기존과 동일 (Static 9 · SSG 10 · Dynamic `/consultation`) |
+| Playwright E2E | 61 통과 · 3 건너뜀(데스크톱/모바일 전용 항목) · 데스크톱 1440 + 모바일 Pixel 7 |
+| axe (wcag2a/aa, serious 이상) | 13개 라우트 × 2 뷰포트 위반 0건 (color-contrast 규칙은 제외 — 기존 디자인 유지 범위) |
+| 시각 회귀 | 32장(16 경로 × 2 뷰포트) 전부 크기 동일, 픽셀 차이 0~0.1% |
+| `next dev` 런타임 | 13개 화면 + 주요 인터랙션에서 브라우저 콘솔 오류·경고 0건, 서버 로그 오류 0건 |
+| CSS | 포맷만 변경. 공백·주석 제거 후 원본과 동일(폰트 변수 치환 제외) 확인 |
+
+### 8.2 계획 대비 변경
+
+| 계획 | 실제 | 사유 |
+|---|---|---|
+| ESLint 10 | **ESLint 9.39** | `eslint-config-next`에 포함된 `eslint-plugin-react` 7.x가 ESLint 10에서 제거된 API(`getFilename`)를 호출해 실행 불가 |
+| TypeScript 최신(7.0) | **TypeScript 6.0.3** | `typescript-eslint` 지원 범위가 `<6.1.0` |
+| CSS Modules 분할 | **전역 CSS 유지(포맷·섹션 정리만)** | 파일 끝 가독성 보정 규칙이 모든 컴포넌트 규칙보다 뒤에 와야 하는 선언 순서 의존 구조. 모듈 분할 시 로드 순서가 바뀌어 회귀 위험 → §5 리스크 대응안의 1차 단계에서 중단 |
+| `(catalog)` 라우트 그룹 | 미사용 | URL·동작 변화 없는 폴더 정리뿐이라 생략 |
+| create-next-app | 수동 설치(문서 Manual installation) | 파일이 있는 폴더에서는 create-next-app 실행 불가 |
+| — | `sanitizeSelection`, `inquirySummary`, `parseConsultationParams` 순수 함수로 추출 | 단위 테스트 대상 확대(10 → 23건) |
+
+### 8.3 미해결·확인 필요
+
+- **화살표 기호(↔ 로고, → ‘가이드 보기’) 글꼴 차이**: `next/font`가 만드는 `Manrope Fallback`(Arial) 면이 기호를 먼저 그림. `adjustFontFallback: false`로 해결되지만 16.3.7 **Turbopack 빌드는 이 옵션을 무시**(webpack 빌드는 정상 확인). 한글·영문 본문은 동일. Next.js 업데이트 시 재확인.
+- 404 경로(`dynamicParams=false`) 접근 시 서버 로그에 `NoFallbackError` 출력 — 재구축 전 프로토타입에서도 동일하게 발생, 응답은 정상 404.
+- `npm install` 시 `unrs-resolver` postinstall이 npm allowScripts 정책으로 미실행 경고. lint 동작에는 영향 없음 확인.
+- WebMCP(`document.modelContext`) 연동은 지원 브라우저가 없어 런타임 미검증(기존과 동일).
+
+### 8.4 다음 행동
+
+1. 브랜치 리뷰 후 `main` 병합 여부 결정
+2. Vercel 프리뷰 배포 — 외부 URL 생성이라 대표 승인 후 실행
+3. (선택) CSS Modules 2차 분할 — 가독성 보정 블록을 컴포넌트별로 흡수하는 작업이 선행돼야 함

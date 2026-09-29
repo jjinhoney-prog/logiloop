@@ -1,6 +1,6 @@
 # 로지루프 · LogiLoop
 
-전국 물류 네트워크 구축을 목표로 화주의 물류거점 선택을 돕는 다중 페이지 React 플랫폼입니다. `로지루프 전략백서 v1.3`을 기준으로 후보 연결·조건 비교·운영방식 검토의 3단계 상담을 구현했습니다. 지역 전략은 사용자 요청에 따라 부울경 중심에서 전국 확장 목표로 변경했습니다. 원본 전략백서는 수정하지 않았습니다.
+전국 물류 네트워크 구축을 목표로 화주의 물류거점 선택을 돕는 다중 페이지 Next.js(App Router · TypeScript) 플랫폼입니다. `로지루프 전략백서 v1.3`을 기준으로 후보 연결·조건 비교·운영방식 검토의 3단계 상담을 구현했습니다. 지역 전략은 사용자 요청에 따라 부울경 중심에서 전국 확장 목표로 변경했습니다. 원본 전략백서는 수정하지 않았습니다.
 
 **현재 버전은 프런트엔드 프로토타입입니다. Supabase, 데이터베이스, 외부 인증, 실제 접수·발송을 사용하지 않습니다.** 예시 업체·매물·고객은 모두 가상 데이터이며 화면에 표시됩니다.
 
@@ -16,10 +16,30 @@ npm run dev
 브라우저에서 http://localhost:3000 을 엽니다.
 
 ```bash
-npm test       # 검색·입력 검증·비교함 로직 테스트
-npm run build # 배포 빌드
-npm start     # 프로덕션 서버
+npm run lint       # ESLint (eslint-config-next core-web-vitals + typescript)
+npm run typecheck  # 라우트 타입 생성 후 tsc
+npm test           # Vitest 단위 테스트 (필터·입력 검증·비교함·준비서 문구·URL 파싱)
+npm run build      # 배포 빌드 (Turbopack)
+npm start          # 프로덕션 서버
+npm run check      # lint → typecheck → test → build
+npm run e2e        # Playwright E2E + axe 접근성 (빌드 후 3200 포트에서 실행)
 ```
+
+처음 E2E를 돌릴 때는 `npx playwright install chromium`으로 브라우저를 설치합니다.
+
+## 기술 구성
+
+| 항목 | 버전·방식 |
+| --- | --- |
+| Next.js | 16.3.7 · App Router · Turbopack · `typedRoutes` |
+| React | 19.3.0 |
+| 언어 | TypeScript 6.0 (`typescript-eslint`가 6.1 미만만 지원) |
+| 스타일 | `app/globals.css` 전역 CSS · 폰트는 `next/font/google`로 빌드 시 자체 호스팅 |
+| 아이콘 | lucide-react 1.48 |
+| 린트 | ESLint 9 flat config (`eslint-plugin-react`가 ESLint 10 미지원) |
+| 테스트 | Vitest 5 · Playwright 1.63 · @axe-core/playwright |
+
+재구축 계획과 결정 사항은 [docs/plan.md](docs/plan.md)에 있습니다. `tests/baseline/`은 재구축 전 프로토타입의 화면 기준선(데스크톱 1440 · 모바일 390)입니다.
 
 ## 화면
 
@@ -42,7 +62,7 @@ Next.js App Router의 실제 경로로 분리되어 있으며 URL 직접 접속�
 
 ## 구현 범위와 저장 방식
 
-- React JSX + 일반 CSS + JavaScript, Next.js의 Node.js 서버 실행 구조입니다.
+- 서버 컴포넌트가 기본이며, 필터·비교함·폼·관리 데모처럼 상호작용이 필요한 부분만 클라이언트 컴포넌트입니다. Next.js의 Node.js 서버 실행 구조입니다.
 - Supabase SDK·키·SQL·연동 코드는 없습니다. 환경 변수 없이 실행됩니다.
 - 비교함에는 예시 ID만 `localStorage`의 `logiloop:compare` 키에 저장합니다.
 - 폼의 이름·전화번호는 React 메모리에만 유지됩니다. 서버로 전송하지 않고 다운로드·복사도 사용자가 선택합니다. 새로고침·화면 이탈 시 사라집니다.
@@ -51,7 +71,7 @@ Next.js App Router의 실제 경로로 분리되어 있으며 URL 직접 접속�
 - 비교함은 공개된 예시 조건을 비교하는 화면입니다. 비공개 견적 등록·만료 링크 공유·파일 업로드·실제 고객 CRM은 아직 구현하지 않았습니다.
 - 실시간 가용성, 자동 추천 점수, 실제 거래 성과를 표시하지 않습니다.
 - 예시 페이지의 검색 노출을 막기 위해 기본 메타데이터를 `noindex, nofollow`로 설정했습니다. 이는 인증이나 접근 통제가 아닙니다.
-- Google Fonts를 스타일시트로 불러오며 실패하면 시스템 한글 글꼴로 표시됩니다. 사용자의 폼 입력 정보는 글꼴 요청에 포함되지 않습니다.
+- 글꼴(Manrope · Noto Sans KR)은 빌드 시 내려받아 사이트에서 직접 제공합니다. 방문자 브라우저는 Google Fonts에 요청하지 않습니다.
 
 ## GitHub에 올리기
 
@@ -80,13 +100,15 @@ git push -u origin main
 
 ## 수정할 곳
 
-- `lib/data.js`: 가상 공급 자료, 가이드, 상담 등급·관리 데모
-- `app/globals.css`: 반응형 디자인·색상·타이포그래피
-- `components/shell.jsx`: 메뉴·헤더·푸터
-- `components/inquiry-form.jsx`: 상담·파트너 준비서
-- `components/admin.jsx`: 내부 업무 흐름 데모
-- `lib/logic.mjs`: 필터·입력 검증·비교 선택 규칙
-- `app/layout.jsx`: 제목·설명·검색 노출 정책
+- `lib/data.ts` · `lib/types.ts`: 가상 공급 자료, 가이드, 상담 등급·관리 데모와 타입
+- `lib/logic.ts`: 필터·입력 검증·비교 선택 규칙
+- `lib/inquiry-summary.ts` · `lib/search-params.ts`: 준비서 문구, 상담 URL 파라미터 해석
+- `app/globals.css`: 반응형 디자인·색상·타이포그래피 (뒤쪽 가독성 보정 규칙은 선언 순서에 의존하므로 순서 유지)
+- `components/shell/`: 메뉴·헤더·푸터 (`nav.ts`에 메뉴·breadcrumb 라벨)
+- `components/providers/`: 비교함 상태(`logiloop:compare`)·토스트·WebMCP 도구 등록
+- `components/inquiry/`: 상담·파트너 준비서
+- `components/admin/`: 내부 업무 흐름 데모
+- `app/layout.tsx`: 제목·설명·검색 노출 정책·글꼴
 
 공급 데이터를 실제 정보로 바꿀 때는 예시 안내만 지우지 말고 회사명·사진 사용 권한, 기준일, 가용성, 공개 가능한 가격, 확인 상태를 함께 갱신하세요. 개인정보·비공개 견적은 클라이언트 소스에 넣지 않습니다.
 

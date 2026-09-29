@@ -1,0 +1,269 @@
+'use client';
+
+import { useState } from 'react';
+import { ArrowUpRight, Check, ClipboardList, Clock3, Filter, Plus, Users, X } from 'lucide-react';
+import { useToast } from '@/components/providers/toast';
+import { DemoNotice, Empty, PageHeading, SectionTitle } from '@/components/ui';
+import { demoInquiries, listings } from '@/lib/data';
+import type { DemoInquiry, TierId } from '@/lib/types';
+
+const statuses = ['신규 문의', '요구조건 확인', '후보 선별', '비교 검토', '실사·협의', '계약', '운영 개시', '보류'];
+const MAX_MINUTES = 480;
+
+type Tab = 'inquiries' | 'supply';
+
+export default function Admin() {
+  const [tab, setTab] = useState<Tab>('inquiries');
+  // 공개 데모 상태. 새로고침하면 초기화되며 어디에도 저장하지 않는다.
+  const [rows, setRows] = useState<DemoInquiry[]>(demoInquiries);
+  const [tier, setTier] = useState('전체 등급');
+  const [active, setActive] = useState<string | null>(null);
+  const [minutes, setMinutes] = useState('30');
+  const notify = useToast();
+
+  const total = rows.reduce((sum, r) => sum + r.hours, 0);
+  const filtered = rows.filter((r) => tier === '전체 등급' || r.tier === Number(tier));
+  const current = rows.find((r) => r.id === active);
+
+  function update<K extends keyof DemoInquiry>(id: string, key: K, value: DemoInquiry[K]) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  }
+
+  function addTime() {
+    if (!current) return;
+    const value = Number(minutes);
+    if (!Number.isFinite(value) || value <= 0 || value > MAX_MINUTES) {
+      notify('1~480분 사이의 작업 시간을 입력해 주세요.');
+      return;
+    }
+    update(current.id, 'hours', Math.round((current.hours + value / 60) * 100) / 100);
+    notify('예시 작업 시간을 반영했습니다. 새로고침 시 초기화됩니다.');
+  }
+
+  const stats = [
+    [ClipboardList, '예시 상담', `${rows.length}건`, '등급별 요구조건 관리'],
+    [Users, '3등급 검토', `${rows.filter((r) => r.tier === 3).length}건`, '범위·비용 사전 협의'],
+    [Clock3, '예시 투입 시간', `${total.toFixed(1)}h`, '고객별 작업 시간 기록'],
+  ] as const;
+
+  return (
+    <div className="page admin-page">
+      <PageHeading eyebrow="OPERATIONS WORKSPACE" title="운영 워크스페이스" description="요구조건부터 다음 검토 일정까지, 상담의 흐름을 관리합니다.">
+        <span className="chip">전략백서 v1.3 기준</span>
+      </PageHeading>
+      <DemoNotice>공개 데모 · 가상 고객만 표시합니다. 변경 사항은 저장되지 않으며 실제 운영에는 별도 인증·저장소가 필요합니다.</DemoNotice>
+      <div className="stats-grid">
+        {stats.map(([Icon, label, value, note]) => (
+          <div className="stat-card" key={label}>
+            <span>
+              {label}
+              <Icon size={20} />
+            </span>
+            <strong>{value}</strong>
+            <small>{note}</small>
+          </div>
+        ))}
+      </div>
+      <div className="admin-tabs" role="tablist" aria-label="관리 화면">
+        <button role="tab" id="inquiries-tab" aria-controls="admin-panel" aria-selected={tab === 'inquiries'} onClick={() => setTab('inquiries')}>
+          상담 파이프라인<span>{rows.length}</span>
+        </button>
+        <button role="tab" id="supply-tab" aria-controls="admin-panel" aria-selected={tab === 'supply'} onClick={() => setTab('supply')}>
+          공급 확인 이력<span>{listings.length}</span>
+        </button>
+      </div>
+      <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={tab === 'inquiries' ? 'inquiries-tab' : 'supply-tab'}>
+        {tab === 'inquiries' ? (
+          <>
+            <div className="admin-table-top">
+              <h2>진행 중인 상담</h2>
+              <label>
+                <Filter size={15} />
+                <select aria-label="상담 등급 필터" value={tier} onChange={(e) => setTier(e.target.value)}>
+                  <option>전체 등급</option>
+                  <option value="1">1 · 후보 연결</option>
+                  <option value="2">2 · 조건 비교</option>
+                  <option value="3">3 · 운영방식 검토</option>
+                </select>
+              </label>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>상담·화주</th>
+                    <th>등급</th>
+                    <th>진행 상태</th>
+                    <th>담당자</th>
+                    <th>투입 시간</th>
+                    <th>다음 확인</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr key={r.id} className={active === r.id ? 'row-active' : ''}>
+                      <td>
+                        <button className="table-title" onClick={() => setActive(active === r.id ? null : r.id)}>
+                          {r.company}
+                          <ArrowUpRight size={15} />
+                        </button>
+                        <small>
+                          {r.id} · {r.region} · {r.item}
+                        </small>
+                      </td>
+                      <td>
+                        <span className={`tier-badge badge-${r.tier}`}>{r.tier}등급</span>
+                      </td>
+                      <td>
+                        <span className="status-tag">{r.status}</span>
+                      </td>
+                      <td>{r.owner}</td>
+                      <td>{r.hours.toFixed(1)}h</td>
+                      <td>{r.next}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!filtered.length && <Empty title="해당 등급의 상담이 없습니다." />}
+            {current && (
+              <div className="admin-editor">
+                <div className="section-title">
+                  <h3>{current.company} · 예시 편집</h3>
+                  <button aria-label="상담 편집 닫기" onClick={() => setActive(null)}>
+                    <X size={19} />
+                  </button>
+                </div>
+                <div className="form-grid">
+                  <label className="form-field">
+                    <span>진행 상태</span>
+                    <select value={current.status} onChange={(e) => update(current.id, 'status', e.target.value)}>
+                      {statuses.map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="form-field">
+                    <span>상담 등급 · 하향 변경 불가</span>
+                    <select value={current.tier} onChange={(e) => update(current.id, 'tier', Number(e.target.value) as TierId)}>
+                      {([1, 2, 3] as const).map((t) => (
+                        <option key={t} value={t} disabled={t < current.tier}>
+                          {t}등급
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="form-field">
+                    <span>다음 확인 사항</span>
+                    <input value={current.next} maxLength={100} onChange={(e) => update(current.id, 'next', e.target.value)} />
+                  </label>
+                  <label className="form-field">
+                    <span>추가 작업 시간 (분)</span>
+                    <div className="time-input">
+                      <input type="number" min="1" max={MAX_MINUTES} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+                      <button className="button button-dark" onClick={addTime}>
+                        <Plus size={16} />
+                        반영
+                      </button>
+                    </div>
+                  </label>
+                </div>
+                <p className="small muted">미저장 데모 · 실제 고객 정보는 입력하지 마세요.</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="admin-table-top">
+              <h2>공급 정보 확인 상태</h2>
+              <span className="muted small">등록값과 제안 당시 확인값을 구분합니다</span>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>공급 후보</th>
+                    <th>서류 확인</th>
+                    <th>현장 확인</th>
+                    <th>화주 조건</th>
+                    <th>갱신</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listings.map((i) => (
+                    <tr key={i.id}>
+                      <td>
+                        <strong>{i.name}</strong>
+                        <small>
+                          {i.region} · {i.type === 'warehouse' ? '공간' : '운영 서비스'} · 예시
+                        </small>
+                      </td>
+                      <td>{i.checks[1]}</td>
+                      <td>{i.checks[2]}</td>
+                      <td>확인 대기</td>
+                      <td>
+                        <span className="status-tag amber">제안 전 재확인</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
+      <div className="admin-bottom">
+        <div className="panel">
+          <SectionTitle title="시범 운영 한도" />
+          <p className="muted">백서의 권장 기본값 · 확정된 운영 실적이 아닙니다</p>
+          <div className="pilot-metrics">
+            <div>
+              <strong>
+                12<small>주</small>
+              </strong>
+              <span>시범 기간</span>
+            </div>
+            <div>
+              <strong>
+                5<small>건</small>
+              </strong>
+              <span>위탁 단독 최대</span>
+            </div>
+            <div>
+              <strong>
+                8<small>h</small>
+              </strong>
+              <span>건당 시간 상한</span>
+            </div>
+            <div>
+              <strong>
+                40<small>h</small>
+              </strong>
+              <span>전체 시간 상한</span>
+            </div>
+          </div>
+        </div>
+        <div className="admin-principle">
+          <span className="eyebrow">OPERATING PRINCIPLE</span>
+          <h3>
+            실제 수용 조건을 먼저,
+            <br />
+            추천 이유는 명확하게.
+          </h3>
+          <p>
+            <Check size={16} />
+            미확인 후보는 확인 대기로 구분
+          </p>
+          <p>
+            <Check size={16} />
+            정보 기한이 지나면 제안 전 재확인
+          </p>
+          <p>
+            <Check size={16} />
+            직접 계약 결과도 별도 확인
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
