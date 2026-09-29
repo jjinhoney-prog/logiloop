@@ -35,6 +35,16 @@ export const demoInquiries: DemoInquiry[] = [
   { id: 'LL-260918-03', company: '예시 유통 화주 C', item: '냉장식품', region: '양산', tier: 3, status: '비교 검토', owner: '담당자 A', hours: 4, next: '평균·피크 비용 검토' },
 ];
 
+// 상담·파트너 신청 폼 선택지. 서버(app/api/inquiry)도 같은 목록으로 입력값을 검증한다.
+export const partnerTypes = [
+  ['물류사 서비스 소개', '취급 품목·온도·가용 처리량을 함께 정리합니다.'],
+  ['창고·물류센터 임대 홍보', '공간·시설·임대 조건을 정리합니다.'],
+] as const;
+export const regionOptions = ['아직 모름', ...regions.slice(1), '복수 지역 검토'];
+export const timingOptions = ['아직 모름', '1개월 이내', '3개월 이내', '6개월 이내', '6개월 이후'];
+export const inquiryTemperatureOptions = ['아직 모름', '상온', '냉장', '냉동', '복수 온도대 · 별도 확인'];
+export const sourceOptions = ['직접 방문', '블로그', '유튜브', '네이버부동산', '거래처 소개', '기타'];
+
 export function findListing(id: string): Listing | undefined {
   return listings.find((item) => item.id === id);
 }

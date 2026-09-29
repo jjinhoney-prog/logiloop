@@ -27,7 +27,7 @@ export function validateInquiry(data: Partial<InquiryData>, partnership = false)
   if (!data.company?.trim()) errors.company = '회사명을 입력해 주세요.';
   if (!/^0[0-9]{8,10}$/.test((data.phone || '').replace(/[\s-]/g, ''))) errors.phone = '연락 가능한 전화번호를 확인해 주세요.';
   if (!partnership && !data.item?.trim()) errors.item = '취급 품목 또는 아직 모름을 입력해 주세요.';
-  if (!data.consent) errors.consent = '작성 내용 확인에 동의해 주세요.';
+  if (!data.consent) errors.consent = '개인정보 수집·이용 및 국외 이전에 동의해 주세요.';
   return errors;
 }
 

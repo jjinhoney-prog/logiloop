@@ -6,7 +6,7 @@ export function inquirySummary(data: InquiryData, targetItems: Pick<Listing, 'na
   const help = partnership ? '참여 유형: ' + data.help : '필요한 도움: ' + tiers.find((t) => t.id === data.tier)?.name;
   return [
     `${kind} 준비서`,
-    '※ 미전송 문서 · 실제 접수되지 않았습니다.',
+    '※ 보관용 사본 · 이 파일 자체로는 접수되지 않습니다.',
     '',
     `회사: ${data.company}`,
     `담당자: ${data.name}`,

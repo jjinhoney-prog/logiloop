@@ -2,32 +2,30 @@
 
 import { useState, type FormEvent, type InputHTMLAttributes } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, Clipboard, Download, FileCheck2, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clipboard, Download, FileCheck2, Info, Send } from 'lucide-react';
 import { useToast } from '@/components/providers/toast';
 import { PageHeading } from '@/components/ui';
-import { findListing, regions, tiers } from '@/lib/data';
+import { Modal } from '@/components/ui/modal';
+import { findListing, inquiryTemperatureOptions as temperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from '@/lib/data';
 import { inquirySummary, summaryFileName } from '@/lib/inquiry-summary';
 import { validateInquiry } from '@/lib/logic';
 import type { InquiryData, InquiryErrors, Listing, TierId } from '@/lib/types';
 import { FormGuide } from './form-guide';
 
 const stepLabels = ['필요한 도움', '기본 조건', '준비서 확인'];
-const partnerTypes = [
-  ['물류사 서비스 소개', '취급 품목·온도·가용 처리량을 함께 정리합니다.'],
-  ['창고·물류센터 임대 홍보', '공간·시설·임대 조건을 정리합니다.'],
-] as const;
-const regionOptions = ['아직 모름', ...regions.slice(1), '복수 지역 검토'];
-const timingOptions = ['아직 모름', '1개월 이내', '3개월 이내', '6개월 이내', '6개월 이후'];
-const temperatureOptions = ['아직 모름', '상온', '냉장', '냉동', '복수 온도대 · 별도 확인'];
-const sourceOptions = ['직접 방문', '블로그', '유튜브', '네이버부동산', '거래처 소개', '기타'];
 
 type TextKey = 'company' | 'name' | 'phone' | 'item';
+type SubmitState = 'idle' | 'sending' | 'sent';
 
 export default function InquiryForm({ initialTier = 1, targets = [], partnership = false }: { initialTier?: TierId; targets?: string[]; partnership?: boolean }) {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<InquiryErrors>({});
+  const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [doneOpen, setDoneOpen] = useState(false);
+  const [website, setWebsite] = useState(''); // 허니팟
   const notify = useToast();
-  // 입력값은 이 컴포넌트 메모리에만 존재한다. 서버 전송·저장 없음.
+  const submitLabel = partnership ? '파트너 신청하기' : '상담 신청하기';
+  // 입력값은 ‘신청하기’ 전까지 이 컴포넌트 메모리에만 있다. 신청 시 /api/inquiry로 전송되며 서버에 저장하지 않는다.
   const [data, setData] = useState<InquiryData>({
     tier: initialTier,
     help: partnership ? '물류사 서비스 소개' : '',
@@ -77,6 +75,26 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
     a.download = summaryFileName(partnership);
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function submit() {
+    if (submitState !== 'idle') return;
+    setSubmitState('sending');
+    try {
+      const response = await fetch('/api/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, partnership, targets: targetItems.map((i) => i.id), website }),
+      });
+      const result = (await response.json().catch(() => null)) as { ok: boolean; error?: string } | null;
+      if (!response.ok || !result?.ok) throw new Error(result?.error || '접수하지 못했습니다.');
+      setSubmitState('sent');
+      setDoneOpen(true);
+    } catch (err) {
+      setSubmitState('idle');
+      const reason = err instanceof Error && err.message !== 'Failed to fetch' ? err.message : '네트워크 연결을 확인해 주세요.';
+      notify(`${reason} 준비서를 내려받아 보관해 주세요.`);
+    }
   }
 
   async function copy() {
@@ -131,7 +149,7 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
           </ol>
           <div className="form-demo-message">
             <Info size={18} />
-            <span>체험용 작성 화면입니다. 입력 내용은 서버에 전송·저장되지 않으며, 마지막에 상담 준비서를 내려받을 수 있습니다.</span>
+            <span>마지막 단계에서 ‘{partnership ? '파트너 신청하기' : '상담 신청하기'}’를 누르면 로지루프 담당자 메일로 전달됩니다. 입력 내용은 서버에 저장하지 않으며, 준비서를 내려받아 보관할 수도 있습니다.</span>
           </div>
           {step < 3 ? (
             <form className="panel inquiry-panel" onSubmit={next} noValidate>
@@ -229,11 +247,11 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
                     <label>
                       <input id="consent" type="checkbox" checked={data.consent} onChange={(e) => field('consent', e.target.checked)} aria-invalid={!!errors.consent} />
                       <span>
-                        실제 접수가 아닌 준비서 작성임을 확인했습니다. <b>(필수)</b>
+                        상담 회신을 위한 개인정보 수집·이용과 메일 발송 서비스(Resend, 미국)로의 국외 이전에 동의합니다. <b>(필수)</b>
                       </span>
                     </label>
                     <p>
-                      입력 정보는 이 화면의 메모리에만 유지됩니다. 새로고침하면 사라지며, 다운로드한 파일에는 입력한 연락처가 포함됩니다. <Link href="/privacy">개인정보 안내</Link>
+                      입력 정보는 신청 시 로지루프 담당자 메일로만 전달되며 서버에 저장하지 않습니다. 동의하지 않으면 신청할 수 없으며, 준비서 다운로드는 가능합니다. <Link href="/privacy">개인정보 안내</Link>
                     </p>
                     {errors.consent && <small className="field-error">{errors.consent}</small>}
                   </div>
@@ -259,16 +277,16 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
               <span className="prepared-icon">
                 <FileCheck2 size={32} />
               </span>
-              <div className="eyebrow">READY TO REVIEW · 미전송</div>
-              <h2>상담 준비서를 정리했습니다.</h2>
+              <div className="eyebrow">{submitState === 'sent' ? 'SUBMITTED · 접수 완료' : 'READY TO SUBMIT · 신청 전'}</div>
+              <h2>{submitState === 'sent' ? '신청이 접수되었습니다.' : '상담 준비서를 정리했습니다.'}</h2>
               <p>
-                실제 상담 접수는 이루어지지 않았습니다.
+                {submitState === 'sent' ? '담당자가 확인 후 연락드립니다.' : '아직 접수되지 않았습니다.'}
                 <br />
-                아래 내용을 확인하고 파일로 보관하세요.
+                {submitState === 'sent' ? '준비서는 내려받아 보관하실 수 있습니다.' : `내용을 확인한 뒤 ‘${submitLabel}’를 눌러 주세요.`}
               </p>
               <pre>{summary()}</pre>
               <div className="form-actions">
-                <button className="button button-outline" onClick={() => setStep(2)}>
+                <button className="button button-outline" onClick={() => setStep(2)} disabled={submitState !== 'idle'}>
                   <ArrowLeft size={16} />
                   수정
                 </button>
@@ -276,16 +294,29 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
                   <Clipboard size={16} />
                   복사
                 </button>
-                <button className="button button-dark" onClick={download}>
+                <button className="button button-outline" onClick={download}>
                   <Download size={16} />
                   준비서 다운로드
                 </button>
+                <button className="button button-dark" onClick={submit} disabled={submitState !== 'idle'} aria-busy={submitState === 'sending'}>
+                  <Send size={16} />
+                  {submitState === 'sending' ? '전송 중…' : submitState === 'sent' ? '신청 완료' : submitLabel}
+                </button>
+              </div>
+              <div className="hp-field" aria-hidden="true">
+                <label>
+                  웹사이트
+                  <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </label>
               </div>
             </section>
           )}
         </div>
         <FormGuide partnership={partnership} />
       </div>
+      <Modal open={doneOpen} onClose={() => setDoneOpen(false)} title="접수되었습니다.">
+        <p>영업일 기준 1일 내 연락드립니다.</p>
+      </Modal>
     </div>
   );
 }

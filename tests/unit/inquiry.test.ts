@@ -11,7 +11,7 @@ const data: InquiryData = {
 describe('inquirySummary', () => {
   test('matches the prototype text for a consultation', () => {
     expect(inquirySummary(data, [{ name: 'A창고' }, { name: 'B파트너' }])).toBe(
-      '물류거점 상담 준비서\n※ 미전송 문서 · 실제 접수되지 않았습니다.\n\n회사: 예시 회사\n담당자: 홍길동\n연락처: 010-0000-0000\n필요한 도움: 조건 비교\n품목: 생활용품\n대략적 물량: 아직 모름\n지역: 부산\n희망 시점: 아직 모름\n온도: 상온\n검토 후보: A창고, B파트너\n추가 요청: 없음\n유입경로: 직접 방문\n\n상담 등급과 업무 범위·비용은 담당자 확인 후 결정합니다.',
+      '물류거점 상담 준비서\n※ 보관용 사본 · 이 파일 자체로는 접수되지 않습니다.\n\n회사: 예시 회사\n담당자: 홍길동\n연락처: 010-0000-0000\n필요한 도움: 조건 비교\n품목: 생활용품\n대략적 물량: 아직 모름\n지역: 부산\n희망 시점: 아직 모름\n온도: 상온\n검토 후보: A창고, B파트너\n추가 요청: 없음\n유입경로: 직접 방문\n\n상담 등급과 업무 범위·비용은 담당자 확인 후 결정합니다.',
     );
   });
   test('partnership uses participation type, fallbacks and region detail', () => {

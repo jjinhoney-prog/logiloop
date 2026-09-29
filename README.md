@@ -41,6 +41,22 @@ npm run e2e        # Playwright E2E + axe 접근성 (빌드 후 3200 포트에�
 
 재구축 계획과 결정 사항은 [docs/plan.md](docs/plan.md)에 있습니다. `tests/baseline/`은 재구축 전 프로토타입의 화면 기준선(데스크톱 1440 · 모바일 390)입니다.
 
+## 상담 접수 메일 (Resend)
+
+`/consultation`·`/partnership`의 ‘신청하기’는 `POST /api/inquiry`로 전송되고, 서버가 Resend로 담당자 메일에 전달합니다. 서버·DB에는 저장하지 않습니다.
+
+`.env.local`(로컬)과 Vercel 환경변수에만 값을 넣습니다. 코드·저장소에 키를 넣지 마세요.
+
+| 변수 | 설명 |
+| --- | --- |
+| `RESEND_API_KEY` | Resend API 키 (서버 전용, `NEXT_PUBLIC_` 금지) |
+| `INQUIRY_TO_EMAIL` | 받는 주소. 쉼표로 여러 개 가능 |
+
+- 발신 주소는 `onboarding@resend.dev`(도메인 인증 전 **테스트 모드**)입니다. **테스트 모드에서는 Resend에 가입한 이메일 주소로만 받을 수 있습니다.** 다른 주소로 받으려면 Resend에서 발신 도메인을 인증한 뒤 `app/api/inquiry/route.ts`의 `FROM`을 바꿉니다.
+- 키가 없으면 API는 `503`과 “접수 설정 전” 메시지로 응답하고, 화면은 준비서 다운로드를 안내합니다.
+- 서버 재검증(필수값·전화번호·선택지·길이), HTML 이스케이프, 허니팟(`website`), IP당 1분 3회 제한(메모리 기반 · 인스턴스별 근사치)을 적용합니다.
+- 테스트는 Resend를 mock 처리하며 실제로 발송하지 않습니다.
+
 ## 화면
 
 | 경로 | 기능 |
