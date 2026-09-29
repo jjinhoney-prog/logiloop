@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, CircleHelp, MapPin, Truck, Warehouse } fr
 import { DemoNotice, PageHeading, SectionTitle } from '@/components/ui';
 import type { Listing } from '@/lib/types';
 import { DetailCompareButton } from './detail-compare-button';
+import { LocationSection } from './location-section';
 
 const checkLabels = ['공급자 입력', '서류 확인', '현장 확인', '해당 화주 조건 수용 확인'];
 
@@ -27,7 +28,7 @@ export default function Detail({ item }: { item: Listing }) {
       <DemoNotice>가상 예시 자료입니다. 실제 업체·공실·가격·수용 능력을 나타내지 않습니다.</DemoNotice>
       <div className="detail-layout">
         <div>
-          <div className="detail-banner">
+          <div className={warehouse ? 'detail-banner' : 'detail-banner detail-banner-partner'}>
             <Icon size={70} strokeWidth={1} />
             <div>
               <span>{warehouse ? 'SPACE PROFILE' : 'SERVICE PROFILE'}</span>
@@ -53,6 +54,7 @@ export default function Detail({ item }: { item: Listing }) {
               ))}
             </div>
           </section>
+          <LocationSection item={item} />
           <section className="panel">
             <SectionTitle title="확인 상태를 구분합니다" />
             <div className="verification-list">

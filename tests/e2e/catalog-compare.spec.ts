@@ -81,6 +81,42 @@ test.describe('comparison list', () => {
   });
 });
 
+test.describe('location · access', () => {
+  test('without keys: map fallback and “거리 계산 설정 전” in the table', async ({ page }) => {
+    await page.goto('/warehouses/busan-01');
+    const section = page.locator('.location-section');
+    await expect(section.getByRole('heading', { name: '창고 위치·접근성' })).toBeVisible();
+    await expect(section).toContainText('권역 대표 위치이며 실제 매물 위치가 아닙니다.');
+    await expect(section.getByText('지도 설정 전')).toBeVisible();
+    await expect(section.locator('.distance-table tbody tr')).toHaveCount(5);
+    await expect(section.locator('.distance-table tbody tr').first()).toContainText('거리 계산 설정 전입니다.');
+    await expect(section).toContainText('카카오모빌리티 경로 기준 추정치이며 시간대·차종(대형 화물차)에 따라 달라질 수 있습니다.');
+  });
+
+  test('renders distances from /api/distance (mocked) and partner pages use their own title and accent', async ({ page }) => {
+    await page.route('**/api/distance?id=partner-02', (route) =>
+      route.fulfill({
+        json: [
+          { hub: '부산신항', km: 31.4, minutes: 38 },
+          { hub: '부산북항', km: null, minutes: null, note: '확인 불가' },
+          { hub: '김해공항', km: 12, minutes: 17 },
+          { hub: '서부산IC', km: 15.2, minutes: 19 },
+          { hub: '동김해IC (남해고속도로)', km: 3.1, minutes: 6 },
+        ],
+      }),
+    );
+    await page.goto('/partners/partner-02');
+    const section = page.locator('.location-section.location-partner');
+    await expect(section.getByRole('heading', { name: '물류사 운영 거점·접근성' })).toBeVisible();
+    await expect(section).toContainText('실제 업체 위치가 아닙니다.');
+    const first = section.locator('.distance-table tbody tr').first();
+    await expect(first).toContainText('31.4km');
+    await expect(first).toContainText('약 38분');
+    await expect(section.locator('.distance-table tbody tr').nth(1)).toContainText('확인 불가');
+    await expect(page.locator('.detail-banner-partner')).toBeVisible();
+  });
+});
+
 test.describe('routing', () => {
   for (const path of ['/warehouses/partner-01', '/partners/busan-01', '/insights/unknown', '/no-such-page']) {
     test(`404 for ${path}`, async ({ page }) => {

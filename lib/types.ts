@@ -39,6 +39,24 @@ export interface Listing {
   suitability: string;
   limitation: string;
   checks: VerificationChecks;
+  /** 권역 대표 중심점(WGS84). 실제 매물 위치가 아니다. */
+  lat: number;
+  lng: number;
+}
+
+export interface Hub {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+export interface HubDistance {
+  hub: string;
+  km: number | null;
+  minutes: number | null;
+  /** 경로 계산 실패 시 '확인 불가' */
+  note?: string;
 }
 
 export interface Article {
