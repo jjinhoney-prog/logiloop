@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+.vercel/
+.DS_Store
+*.log
+# Internal strategy source (both Unicode representations).
+*전략백서*.md
+*전략백서*.md
+.vercel
