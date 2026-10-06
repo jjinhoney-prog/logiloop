@@ -60,7 +60,7 @@ export default function Detail({ item }: { item: Listing }) {
           </section>
           <LocationSection item={item} />
           <section className="panel">
-            <SectionTitle title="확인 상태를 구분합니다" />
+            <SectionTitle title="확인 상태를 구분합니다" help={`기준일: ${example ? '예시 자료' : '지음부동산 등록 정보'} · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.`} />
             <div className="verification-list">
               {item.checks.map((check, i) => {
                 const pending = check.includes('대기');
@@ -75,7 +75,6 @@ export default function Detail({ item }: { item: Listing }) {
                 );
               })}
             </div>
-            <p className="muted small">기준일: {example ? '예시 자료' : '지음부동산 등록 정보'} · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.</p>
           </section>
           <section className="panel">
             <SectionTitle title="검토할 조건" />

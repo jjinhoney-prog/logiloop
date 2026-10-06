@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -53,11 +54,7 @@ export default function Catalog({ type, items }: { type: ListingType; items: Lis
         <p>
           전체 <strong>{results.length}</strong>개 {examplesOnly && <span>· 예시 데이터</span>}
         </p>
-        <select aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          <option value="default">기본 순</option>
-          <option value="name">이름 순</option>
-          {warehouse && <option value="area">면적 큰 순</option>}
-        </select>
+        <Select label="정렬" value={sort} onChange={(value) => setSort(value as Sort)} options={[{ value: 'default', label: '기본 순' }, { value: 'name', label: '이름 순' }, ...(warehouse ? [{ value: 'area', label: '면적 큰 순' }] : [])]} />
       </div>
       {results.length ? (
         <div className="catalog-grid">

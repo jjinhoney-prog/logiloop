@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Menu, X } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { Footer } from './footer';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
 
 export default function Shell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const showConsultation = !['/consultation', '/partnership', '/admin'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   return (
-    <div className="app-shell">
+    <div className={`app-shell${showConsultation ? ' has-mobile-consultation' : ''}`}>
       <a className="skip-link" href="#main">
         본문으로 이동
       </a>
@@ -25,6 +29,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {children}
         </main>
         <Footer />
+        {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">상담 신청하기<ArrowRight size={17} /></Link></div>}
       </div>
     </div>
   );

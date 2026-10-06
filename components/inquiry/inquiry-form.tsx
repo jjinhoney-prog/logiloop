@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check, Clipboard, Download, FileCheck2, Info, Send } from 'lucide-react';
 import { useToast } from '@/components/providers/toast';
 import { PageHeading } from '@/components/ui';
+import { Select } from '@/components/ui/select';
 import { Modal } from '@/components/ui/modal';
 import { inquiryTemperatureOptions as temperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from '@/lib/data';
 import { inquirySummary, summaryFileName } from '@/lib/inquiry-summary';
@@ -207,47 +208,19 @@ export default function InquiryForm({
                       <span>대략적 물량</span>
                       <input value={data.volume} onChange={(e) => field('volume', e.target.value)} placeholder="예: 100PLT / 월 1,000건 / 아직 모름" maxLength={100} />
                     </label>
-                    <label className="form-field">
-                      <span>희망 지역 · 전국 시·도</span>
-                      <select value={data.region} onChange={(e) => field('region', e.target.value)}>
-                        {regionOptions.map((r) => (
-                          <option key={r}>{r}</option>
-                        ))}
-                      </select>
-                    </label>
+                    <div className="form-field"><span>희망 지역 · 전국 시·도</span><Select label="희망 지역 · 전국 시·도" value={data.region} onChange={(value) => field('region', value)} options={regionOptions} /></div>
                     <label className="form-field">
                       <span>세부 지역·복수 거점 (선택)</span>
                       <input value={data.regionDetail} onChange={(e) => field('regionDetail', e.target.value)} maxLength={150} placeholder="예: 경기 이천·용인 / 인천과 부산 동시 검토" />
                     </label>
-                    <label className="form-field">
-                      <span>도입·입주 시점</span>
-                      <select value={data.timing} onChange={(e) => field('timing', e.target.value)}>
-                        {timingOptions.map((r) => (
-                          <option key={r}>{r}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="form-field">
-                      <span>필요 온도대</span>
-                      <select value={data.temperature} onChange={(e) => field('temperature', e.target.value)}>
-                        {temperatureOptions.map((r) => (
-                          <option key={r}>{r}</option>
-                        ))}
-                      </select>
-                    </label>
+                    <div className="form-field"><span>도입·입주 시점</span><Select label="도입·입주 시점" value={data.timing} onChange={(value) => field('timing', value)} options={timingOptions} /></div>
+                    <div className="form-field"><span>필요 온도대</span><Select label="필요 온도대" value={data.temperature} onChange={(value) => field('temperature', value)} options={temperatureOptions} /></div>
                   </div>
                   <label className="form-field">
                     <span>추가로 알려주실 내용</span>
                     <textarea value={data.note} onChange={(e) => field('note', e.target.value)} maxLength={2000} rows={4} placeholder="차량, 포장·반품 작업, 계약 일정 등 필요한 조건을 적어주세요." />
                   </label>
-                  <label className="form-field">
-                    <span>로지루프를 알게 된 경로</span>
-                    <select value={data.source} onChange={(e) => field('source', e.target.value)}>
-                      {sourceOptions.map((r) => (
-                        <option key={r}>{r}</option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="form-field"><span>로지루프를 알게 된 경로</span><Select label="로지루프를 알게 된 경로" value={data.source} onChange={(value) => field('source', value)} options={sourceOptions} /></div>
                   <div className="consent-block">
                     <label>
                       <input id="consent" type="checkbox" checked={data.consent} onChange={(e) => field('consent', e.target.checked)} aria-invalid={!!errors.consent} />

@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const filter = (page: Page, label: string) => page.locator('.select-field', { hasText: label }).locator('select');
+async function select(page: Page, label: string, option: string) {
+  await page.getByRole('combobox', { name: label, exact: true }).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
 
 const STORAGE_KEY = 'logiloop:compare';
 
@@ -9,14 +12,14 @@ test.describe('catalog filters', () => {
     await page.goto('/warehouses');
     await expect(page.locator('.catalog-card')).toHaveCount(4);
 
-    await filter(page, '지역').selectOption('경남');
+    await select(page, '지역', '경남');
     await expect(page.locator('.catalog-card')).toHaveCount(3);
 
-    await filter(page, '온도').selectOption('냉장');
+    await select(page, '온도', '냉장');
     await expect(page.locator('.catalog-card')).toHaveCount(1);
     await expect(page.locator('.catalog-card .card-title')).toHaveText(/양산 냉장 보관 물류센터/);
 
-    await filter(page, '온도').selectOption('냉동');
+    await select(page, '온도', '냉동');
     await expect(page.getByText('현재 선택 조건에 등록된 예시 후보가 없습니다.')).toBeVisible();
 
     await page.getByRole('button', { name: '필터 초기화' }).click();
@@ -33,7 +36,7 @@ test.describe('catalog filters', () => {
     await expect(page.locator('.select-field', { hasText: '면적' })).toHaveCount(0);
 
     await page.goto('/warehouses');
-    await page.getByLabel('정렬').selectOption('area');
+    await select(page, '정렬', '면적 큰 순');
     await expect(page.locator('.catalog-card .card-title').first()).toHaveText(/양산/);
   });
 });
@@ -90,7 +93,8 @@ test.describe('location · access', () => {
     await expect(section.getByText('지도 설정 전')).toBeVisible();
     await expect(section.locator('.distance-table tbody tr')).toHaveCount(5);
     await expect(section.locator('.distance-table tbody tr').first()).toContainText('거리 계산 설정 전입니다.');
-    await expect(section).toContainText('카카오모빌리티 경로 기준 추정치이며 시간대·차종(대형 화물차)에 따라 달라질 수 있습니다.');
+    await section.getByRole('button', { name: '창고 위치·접근성 안내' }).click();
+    await expect(section.getByRole('tooltip')).toContainText('카카오모빌리티 경로 기준 추정치이며 시간대·차종(대형 화물차)에 따라 달라질 수 있습니다.');
   });
 
   test('renders distances from /api/distance (mocked) and partner pages use their own title and accent', async ({ page }) => {

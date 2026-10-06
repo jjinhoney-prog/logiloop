@@ -1,3 +1,4 @@
+import { Select } from '@/components/ui/select';
 import { RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { regions, sizes, temperatures } from '@/lib/data';
 
@@ -40,31 +41,19 @@ export function Filters({
           <SlidersHorizontal size={16} />
           상세 조건
         </span>
-        <label className="select-field">
+        <div className="select-field">
           <span>지역</span>
-          <select value={value.region} onChange={(e) => onChange({ region: e.target.value })}>
-            {regions.map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-        </label>
-        <label className="select-field">
+          <Select label="지역" value={value.region} onChange={(value) => onChange({ region: value })} options={regions} />
+        </div>
+        <div className="select-field">
           <span>온도</span>
-          <select value={value.temperature} onChange={(e) => onChange({ temperature: e.target.value })}>
-            {temperatures.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-        </label>
+          <Select label="온도" value={value.temperature} onChange={(value) => onChange({ temperature: value })} options={temperatures} />
+        </div>
         {warehouse && (
-          <label className="select-field">
+          <div className="select-field">
             <span>면적</span>
-            <select value={value.size} onChange={(e) => onChange({ size: e.target.value })}>
-              {sizes.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </label>
+            <Select label="면적" value={value.size} onChange={(value) => onChange({ size: value })} options={sizes} />
+          </div>
         )}
         <button className="reset-button" onClick={onReset}>
           <RotateCcw size={15} />

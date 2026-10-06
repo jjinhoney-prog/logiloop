@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
 import { isExampleListing, listingHref } from '@/lib/data';
 import type { Listing } from '@/lib/types';
+import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
 
 export function PageHeading({ eyebrow, title, description, children }: { eyebrow: string; title: string; description?: string; children?: ReactNode }) {
@@ -98,13 +99,14 @@ export function CatalogCard({ item }: { item: Listing }) {
   );
 }
 
-export function SectionTitle({ index, title, href, linkText = '전체 보기' }: { index?: string; title: string; href?: Route; linkText?: string }) {
+export function SectionTitle({ index, title, href, help, linkText = '전체 보기' }: { index?: string; title: string; href?: Route; help?: string; linkText?: string }) {
   return (
     <div className="section-title">
       <h2>
         {index && <span>{index}</span>}
         {title}
       </h2>
+      {help && <InfoTooltip label={title} text={help} />}
       {href && (
         <Link href={href}>
           {linkText}

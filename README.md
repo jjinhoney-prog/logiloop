@@ -61,6 +61,14 @@ AI와 대화하며 후보 API를 정리하고, 두 가지 기준으로 골랐습
 | `components/inquiry/inquiry-form.tsx` | 신청 폼, 전송·완료 모달·실패 토스트 |
 | `components/detail/kakao-map.tsx` · `distance-table.tsx` · `location-section.tsx` | 지도, 거리표, ‘위치·접근성’ 섹션 |
 
+## 강의 기준과 다르게 구현한 부분과 이유
+
+| 강의 기준 | 로지루프 구현 | 선택 이유와 제한 |
+| --- | --- | --- |
+| `admins` + `password_hash` + 세션 테이블 | 서버 환경변수 `ADMIN_PASSWORD` 1개 + HMAC 서명 쿠키 | 운영자 1명인 과제 범위에 맞춰 계정·세션 테이블을 생략했습니다. 쿠키는 HttpOnly·운영 환경 Secure·SameSite=Strict, 유효기간 8시간입니다. 비밀번호 변경 시 기존 세션이 무효화됩니다. 환경변수 비밀번호도 비밀 정보이며, 다중 관리자·개별 세션 폐기가 필요하면 계정·세션 저장 구조로 전환해야 합니다. |
+| API 엔드포인트와 `services/` 폴더 | 관리자 변경은 Server Action, 서버 로직은 `lib/` | App Router 구조에서 폼·관리자 변경을 연결하기 위해 선택했습니다. 모든 매물·상담 변경 액션은 첫 줄에 `assertAdmin()`을 호출합니다. 공개 상담·거리 기능은 Route Handler(`/api/inquiry`, `/api/distance`)를 사용합니다. |
+| 권한(privileges) 세부 설정 생략 | 테이블의 `anon`·`authenticated` 권한 회수 | RLS 없이 공개 키를 통한 상담 정보 접근을 차단하기 위한 설정입니다. DB 접근은 서버 전용 service role로 수행하며 공개 조회는 공개 상태 매물만 반환합니다. RLS·트리거·ORM·Supabase Auth는 사용하지 않습니다. |
+
 ## 환경변수
 
 값은 `.env.local`(로컬)과 Vercel 환경변수에만 넣습니다. 저장소에는 이름만 있는 `.env.example`이 있습니다.
@@ -122,7 +130,7 @@ DB 키가 없으면 공개 화면은 예시 7건으로, 상담은 메일 전달�
 | `/warehouses` · `/partners` | 지역·온도·면적·검색어 필터, 정렬, 비교함 담기 |
 | `/warehouses/[id]` · `/partners/[id]` | 조건, 확인 상태, **위치·접근성(지도·거점별 거리)**, 문의 연결 |
 | `/compare` | 최대 3개 후보 비교 |
-| `/consultation` · `/partnership` | 3단계 신청서 작성 → **신청하기(메일 전달)** · 복사 · 다운로드 |
+| `/consultation` · `/partnership` | 3단계 신청서 작성 → **신청하기(DB 저장·메일 전달)** · 복사 · 다운로드 |
 | `/insights`, `/insights/[id]` | 물류 가이드 |
 | `/about` | 상담 범위·비용 안내·역할 분담표 |
 | `/privacy` | 개인정보 안내 (수집 항목, 목적, 보유 기간, Supabase 처리위탁, Resend 국외 이전, 카카오 API 사용) |

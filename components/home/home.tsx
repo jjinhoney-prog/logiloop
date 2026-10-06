@@ -34,6 +34,7 @@ export default function Home({ listings }: { listings: Listing[] }) {
             <br className="desktop-break" />
             원하는 지역과 조건을 정리하고, 우리 회사의 다음 거점을 준비하세요.
           </p>
+          <Link className="button button-dark hero-consultation" href="/consultation">상담 신청하기<ArrowRight size={17} /></Link>
         </div>
         <div className="coverage-panel national-coverage">
           <div className="coverage-heading">
