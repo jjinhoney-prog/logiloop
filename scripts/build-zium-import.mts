@@ -81,7 +81,15 @@ for (const [i, r] of input.rows.entries()) {
 
   const area = areaM2(areaRaw);
   const pyeong = rawName.match(/(약\s*)?([\d,]+)평/);
-  const capacity = pyeong ? `약 ${pyeong[2]}평` : area ? `약 ${Math.round(area / PYEONG).toLocaleString('ko-KR')}평` : '면적 확인 필요';
+  // 제목의 평수는 연면적인 경우가 있어, 전용면적이 있으면 전용 기준 평수를 쓴다.
+  const exclusive = areaRaw.match(/전용\s*([\d,.]+)㎡/);
+  const capacity = exclusive
+    ? `약 ${Math.round(num(exclusive[1]) / PYEONG).toLocaleString('ko-KR')}평`
+    : pyeong
+      ? `약 ${pyeong[2]}평`
+      : area
+        ? `약 ${Math.round(area / PYEONG).toLocaleString('ko-KR')}평`
+        : '면적 확인 필요';
 
   const query = `${CITY[sigun] ?? sigun} ${dong}`;
   if (!cache.has(query)) cache.set(query, await geocode(query));
@@ -107,7 +115,7 @@ for (const [i, r] of input.rows.entries()) {
   if (!point) flags.push('좌표를 찾지 못해 제외');
   if (memo) flags.push(`매물명 내부 메모 분리: [${memo[1]}]`);
   if (!area) flags.push('면적 원문 없음');
-  if (area && pyeong && Math.abs(area / PYEONG - num(pyeong[2])) / num(pyeong[2]) > 0.5) flags.push(`평수(${pyeong[2]}평)와 면적(${area}㎡) 불일치`);
+  if (area && pyeong && Math.abs(area / PYEONG - num(pyeong[2])) / num(pyeong[2]) > 0.5) flags.push(`제목 평수(${pyeong[2]}평)는 연면적 · 임대 면적은 ${capacity}`);
   const ratio = areaRaw.match(/전용률\s*(\d+)%/);
   if (ratio && Number(ratio[1]) < 30) flags.push(`전용률 ${ratio[1]}% — 원문 확인`);
   if (isStale(available)) flags.push(`입주가능일 경과: ${available}`);
