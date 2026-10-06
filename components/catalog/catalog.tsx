@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
 import { CatalogCard, DemoNotice, Empty, PageHeading } from '@/components/ui';
-import { listings } from '@/lib/data';
+import { isExampleListing } from '@/lib/data';
 import { filterListings } from '@/lib/logic';
-import type { ListingType } from '@/lib/types';
+import type { Listing, ListingType } from '@/lib/types';
 import { ComparisonDock } from './comparison-dock';
 import { Filters, type FilterState } from './filters';
 
@@ -15,13 +15,14 @@ type Sort = 'default' | 'name' | 'area';
 
 const initialFilters: FilterState = { query: '', region: '전체 지역', temperature: '전체 온도', size: '전체 면적' };
 
-export default function Catalog({ type }: { type: ListingType }) {
+export default function Catalog({ type, items }: { type: ListingType; items: Listing[] }) {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [sort, setSort] = useState<Sort>('default');
   const { selected } = useCompare();
   const warehouse = type === 'warehouse';
+  const examplesOnly = items.every(isExampleListing);
 
-  let results = filterListings(listings, { ...filters, type });
+  let results = filterListings(items, { ...filters, type });
   if (sort === 'area') results = [...results].sort((a, b) => (b.area || 0) - (a.area || 0));
   if (sort === 'name') results = [...results].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
@@ -42,11 +43,15 @@ export default function Catalog({ type }: { type: ListingType }) {
           <ArrowRight size={17} />
         </Link>
       </PageHeading>
-      <DemoNotice>전국 지역 선택을 지원합니다. 현재 등록 자료는 부울경의 가상 예시이며, 다른 권역은 공급 자료 확보 후 등록합니다.</DemoNotice>
+      <DemoNotice>
+        {examplesOnly
+          ? '전국 지역 선택을 지원합니다. 현재 등록 자료는 부울경의 가상 예시이며, 다른 권역은 공급 자료 확보 후 등록합니다.'
+          : '‘예시’ 표시가 없는 매물은 지음부동산중개법인 등록 매물입니다. 임대 조건은 상담 시 다시 확인합니다.'}
+      </DemoNotice>
       <Filters warehouse={warehouse} value={filters} onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))} onReset={reset} />
       <div className="results-bar">
         <p>
-          전체 <strong>{results.length}</strong>개 <span>· 예시 데이터</span>
+          전체 <strong>{results.length}</strong>개 {examplesOnly && <span>· 예시 데이터</span>}
         </p>
         <select aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="default">기본 순</option>
@@ -61,7 +66,7 @@ export default function Catalog({ type }: { type: ListingType }) {
           ))}
         </div>
       ) : (
-        <Empty title="현재 선택 조건에 등록된 예시 후보가 없습니다." description="해당 지역의 실제 공급 유무를 뜻하지 않습니다. 상담 준비서에 희망 지역과 조건을 남겨보세요.">
+        <Empty title={examplesOnly ? '현재 선택 조건에 등록된 예시 후보가 없습니다.' : '현재 선택 조건에 등록된 후보가 없습니다.'} description="해당 지역의 실제 공급 유무를 뜻하지 않습니다. 상담 준비서에 희망 지역과 조건을 남겨보세요.">
           <Link className="button button-dark" href="/consultation">
             상담 준비하기
           </Link>

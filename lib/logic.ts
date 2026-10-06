@@ -2,6 +2,9 @@ import type { InquiryData, InquiryErrors, Listing, ListingFilters } from './type
 
 export const COMPARE_LIMIT = 3;
 
+/** 매물 ID 형식(URL에 쓰는 영문 slug). supabase/schema.sql의 check 제약과 같다. */
+export const LISTING_ID_PATTERN = /^[a-z0-9][a-z0-9-]{1,47}$/;
+
 export function filterListings<T extends Pick<Listing, 'type' | 'name' | 'region' | 'district' | 'tags' | 'service' | 'temperature'> & { province?: string; area?: number }>(
   items: T[],
   { query = '', region = '전체 지역', temperature = '전체 온도', type, size = '전체 면적' }: ListingFilters = {},
@@ -36,9 +39,12 @@ export function toggleSelection(current: string[], id: string, limit = COMPARE_L
   return current.length >= limit ? current : [...current, id];
 }
 
-/** localStorage 등 신뢰할 수 없는 값에서 유효한 비교 ID만 남긴다(중복 제거·최대 3개). */
-export function sanitizeSelection(value: unknown, validIds: readonly string[], limit = COMPARE_LIMIT): string[] {
+/**
+ * localStorage 등 신뢰할 수 없는 값에서 유효한 비교 ID만 남긴다(중복 제거·최대 3개).
+ * validIds가 null이면(공개 매물 목록을 아직 받지 못함) ID 형식만 검사한다.
+ */
+export function sanitizeSelection(value: unknown, validIds: readonly string[] | null, limit = COMPARE_LIMIT): string[] {
   if (!Array.isArray(value)) return [];
-  const ids = value.filter((id): id is string => typeof id === 'string' && validIds.includes(id));
+  const ids = value.filter((id): id is string => typeof id === 'string' && (validIds ? validIds.includes(id) : LISTING_ID_PATTERN.test(id)));
   return [...new Set(ids)].slice(0, limit);
 }

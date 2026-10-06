@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Check, MapPin, Search, SlidersHorizontal, Workflow } from 'lucide-react';
 import { CatalogCard, DemoNotice, SectionTitle } from '@/components/ui';
-import { articles, listings, tiers } from '@/lib/data';
-import type { TierIcon } from '@/lib/types';
+import { articles, isExampleListing, tiers } from '@/lib/data';
+import type { Listing, TierIcon } from '@/lib/types';
 
 const icons: Record<TierIcon, typeof Search> = { Search, SlidersHorizontal, Workflow };
 
@@ -15,7 +15,7 @@ const processSteps = [
   ['04', '비교 결과 안내'],
 ];
 
-export default function Home() {
+export default function Home({ listings }: { listings: Listing[] }) {
   return (
     <div className="page home-page">
       <div className="home-intro">
@@ -103,9 +103,13 @@ export default function Home() {
       </div>
 
       <SectionTitle index="02" title="다음 물류거점의 조건을 살펴보세요" href="/warehouses" />
-      <DemoNotice>현재는 부울경의 가상 예시를 제공합니다. 전국 지역을 선택할 수 있으며, 권역별 공급 자료는 확보 후 등록합니다.</DemoNotice>
+      <DemoNotice>
+        {listings.every(isExampleListing)
+          ? '현재는 부울경의 가상 예시를 제공합니다. 전국 지역을 선택할 수 있으며, 권역별 공급 자료는 확보 후 등록합니다.'
+          : '지음부동산중개법인 등록 매물과 화면 확인용 예시를 함께 보여 줍니다. 조건은 상담 시 다시 확인합니다.'}
+      </DemoNotice>
       <div className="catalog-grid home-catalog">
-        {listings.slice(0, 3).map((item) => (
+        {listings.map((item) => (
           <CatalogCard key={item.id} item={item} />
         ))}
       </div>

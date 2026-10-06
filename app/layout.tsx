@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Manrope, Noto_Sans_KR } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import Shell from '@/components/shell/shell';
@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: '물류사 후보 연결부터 창고 직접 임차·3PL 위탁·혼합 운영 비교까지. 전국 물류거점 상담 플랫폼.',
   robots: { index: false, follow: false },
 };
+
+// 다크모드 기기에서도 밝은 화면으로 렌더링한다(globals.css의 color-scheme과 같은 값).
+export const viewport: Viewport = { colorScheme: 'only light' };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (

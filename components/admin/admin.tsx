@@ -1,269 +1,295 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowUpRight, Check, ClipboardList, Clock3, Filter, Plus, Users, X } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import Link from 'next/link';
+import { Archive, ArrowUpRight, ClipboardList, Eye, EyeOff, Filter, LogOut, MailWarning, Pencil, Plus, RotateCcw, Save, Warehouse, X } from 'lucide-react';
+import { changeListingVisibility, logout, saveInquiryProgress, type ActionResult } from '@/app/admin/actions';
 import { useToast } from '@/components/providers/toast';
-import { DemoNotice, Empty, PageHeading, SectionTitle } from '@/components/ui';
-import { demoInquiries, listings } from '@/lib/data';
-import type { DemoInquiry, TierId } from '@/lib/types';
+import { DemoNotice, Empty, PageHeading } from '@/components/ui';
+import { inquiryStages, listingHref, tiers, visibilityLabels } from '@/lib/data';
+import { formatKst } from '@/lib/inquiry-email';
+import type { AdminListing, InquiryRecord, InquiryStage, MailStatus, Visibility } from '@/lib/types';
 
-const statuses = ['신규 문의', '요구조건 확인', '후보 선별', '비교 검토', '실사·협의', '계약', '운영 개시', '보류'];
-const MAX_MINUTES = 480;
+export type AdminTab = 'inquiries' | 'listings';
 
-type Tab = 'inquiries' | 'supply';
+const mailLabels: Record<MailStatus, string> = { pending: '발송 대기', sent: '발송', failed: '발송 실패', skipped: '메일 미설정' };
 
-export default function Admin() {
-  const [tab, setTab] = useState<Tab>('inquiries');
-  // 공개 데모 상태. 새로고침하면 초기화되며 어디에도 저장하지 않는다.
-  const [rows, setRows] = useState<DemoInquiry[]>(demoInquiries);
-  const [tier, setTier] = useState('전체 등급');
-  const [active, setActive] = useState<string | null>(null);
-  const [minutes, setMinutes] = useState('30');
-  const notify = useToast();
+export default function Admin({ dbReady, inquiries, listings, initialTab }: { dbReady: boolean; inquiries: InquiryRecord[]; listings: AdminListing[]; initialTab: AdminTab }) {
+  const [tab, setTab] = useState<AdminTab>(initialTab);
+  const [stage, setStage] = useState<'전체' | InquiryStage>('전체');
+  const [active, setActive] = useState<number | null>(null);
 
-  const total = rows.reduce((sum, r) => sum + r.hours, 0);
-  const filtered = rows.filter((r) => tier === '전체 등급' || r.tier === Number(tier));
-  const current = rows.find((r) => r.id === active);
-
-  function update<K extends keyof DemoInquiry>(id: string, key: K, value: DemoInquiry[K]) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
-  }
-
-  function addTime() {
-    if (!current) return;
-    const value = Number(minutes);
-    if (!Number.isFinite(value) || value <= 0 || value > MAX_MINUTES) {
-      notify('1~480분 사이의 작업 시간을 입력해 주세요.');
-      return;
-    }
-    update(current.id, 'hours', Math.round((current.hours + value / 60) * 100) / 100);
-    notify('예시 작업 시간을 반영했습니다. 새로고침 시 초기화됩니다.');
-  }
-
+  const filtered = inquiries.filter((r) => stage === '전체' || r.stage === stage);
+  const current = inquiries.find((r) => r.id === active);
   const stats = [
-    [ClipboardList, '예시 상담', `${rows.length}건`, '등급별 요구조건 관리'],
-    [Users, '3등급 검토', `${rows.filter((r) => r.tier === 3).length}건`, '범위·비용 사전 협의'],
-    [Clock3, '예시 투입 시간', `${total.toFixed(1)}h`, '고객별 작업 시간 기록'],
+    [ClipboardList, '신규 접수', `${inquiries.filter((r) => r.stage === '접수').length}건`, '아직 연락하지 않은 상담'],
+    [MailWarning, '메일 발송 실패', `${inquiries.filter((r) => r.mailStatus === 'failed').length}건`, 'DB에는 저장됨 · 직접 확인 필요'],
+    [Warehouse, '공개 매물', `${listings.filter((l) => l.visibility === 'published').length} / ${listings.length}`, '비공개·보관 매물은 공개 화면에 나오지 않음'],
   ] as const;
 
   return (
     <div className="page admin-page">
-      <PageHeading eyebrow="OPERATIONS WORKSPACE" title="운영 워크스페이스" description="요구조건부터 다음 검토 일정까지, 상담의 흐름을 관리합니다.">
-        <span className="chip">전략백서 v1.3 기준</span>
+      <PageHeading eyebrow="OPERATIONS WORKSPACE" title="운영 워크스페이스" description="상담 접수와 매물 노출을 관리합니다.">
+        <div className="admin-actions">
+          <Link className="button button-dark" href="/admin/listings/new">
+            <Plus size={16} />
+            매물 등록
+          </Link>
+          <form action={logout}>
+            <button className="button button-outline" type="submit">
+              <LogOut size={16} />
+              로그아웃
+            </button>
+          </form>
+        </div>
       </PageHeading>
-      <DemoNotice>공개 데모 · 가상 고객만 표시합니다. 변경 사항은 저장되지 않으며 실제 운영에는 별도 인증·저장소가 필요합니다.</DemoNotice>
-      <div className="stats-grid">
-        {stats.map(([Icon, label, value, note]) => (
-          <div className="stat-card" key={label}>
-            <span>
-              {label}
-              <Icon size={20} />
-            </span>
-            <strong>{value}</strong>
-            <small>{note}</small>
+      {!dbReady ? (
+        <DemoNotice>DB 연결 전입니다. SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY를 등록하면 저장된 상담과 매물이 여기에 표시됩니다. 지금 공개 화면에는 예시 7건이 보입니다.</DemoNotice>
+      ) : (
+        <>
+          <DemoNotice>고객 개인정보가 표시됩니다. 화면 캡처·외부 공유를 하지 마세요. 종결 상담은 1년 뒤 파기합니다(docs/db-design.md §7).</DemoNotice>
+          <div className="stats-grid">
+            {stats.map(([Icon, label, value, note]) => (
+              <div className="stat-card" key={label}>
+                <span>
+                  {label}
+                  <Icon size={20} />
+                </span>
+                <strong>{value}</strong>
+                <small>{note}</small>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="admin-tabs" role="tablist" aria-label="관리 화면">
-        <button role="tab" id="inquiries-tab" aria-controls="admin-panel" aria-selected={tab === 'inquiries'} onClick={() => setTab('inquiries')}>
-          상담 파이프라인<span>{rows.length}</span>
-        </button>
-        <button role="tab" id="supply-tab" aria-controls="admin-panel" aria-selected={tab === 'supply'} onClick={() => setTab('supply')}>
-          공급 확인 이력<span>{listings.length}</span>
-        </button>
-      </div>
-      <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={tab === 'inquiries' ? 'inquiries-tab' : 'supply-tab'}>
-        {tab === 'inquiries' ? (
-          <>
-            <div className="admin-table-top">
-              <h2>진행 중인 상담</h2>
-              <label>
-                <Filter size={15} />
-                <select aria-label="상담 등급 필터" value={tier} onChange={(e) => setTier(e.target.value)}>
-                  <option>전체 등급</option>
-                  <option value="1">1 · 후보 연결</option>
-                  <option value="2">2 · 조건 비교</option>
-                  <option value="3">3 · 운영방식 검토</option>
-                </select>
-              </label>
-            </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>상담·화주</th>
-                    <th>등급</th>
-                    <th>진행 상태</th>
-                    <th>담당자</th>
-                    <th>투입 시간</th>
-                    <th>다음 확인</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className={active === r.id ? 'row-active' : ''}>
-                      <td>
-                        <button className="table-title" onClick={() => setActive(active === r.id ? null : r.id)}>
-                          {r.company}
-                          <ArrowUpRight size={15} />
-                        </button>
-                        <small>
-                          {r.id} · {r.region} · {r.item}
-                        </small>
-                      </td>
-                      <td>
-                        <span className={`tier-badge badge-${r.tier}`}>{r.tier}등급</span>
-                      </td>
-                      <td>
-                        <span className="status-tag">{r.status}</span>
-                      </td>
-                      <td>{r.owner}</td>
-                      <td>{r.hours.toFixed(1)}h</td>
-                      <td>{r.next}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {!filtered.length && <Empty title="해당 등급의 상담이 없습니다." />}
-            {current && (
-              <div className="admin-editor">
-                <div className="section-title">
-                  <h3>{current.company} · 예시 편집</h3>
-                  <button aria-label="상담 편집 닫기" onClick={() => setActive(null)}>
-                    <X size={19} />
-                  </button>
-                </div>
-                <div className="form-grid">
-                  <label className="form-field">
-                    <span>진행 상태</span>
-                    <select value={current.status} onChange={(e) => update(current.id, 'status', e.target.value)}>
-                      {statuses.map((s) => (
+          <div className="admin-tabs" role="tablist" aria-label="관리 화면">
+            <button role="tab" id="inquiries-tab" aria-controls="admin-panel" aria-selected={tab === 'inquiries'} onClick={() => setTab('inquiries')}>
+              상담 접수<span>{inquiries.length}</span>
+            </button>
+            <button role="tab" id="listings-tab" aria-controls="admin-panel" aria-selected={tab === 'listings'} onClick={() => setTab('listings')}>
+              매물 관리<span>{listings.length}</span>
+            </button>
+          </div>
+          <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={tab === 'inquiries' ? 'inquiries-tab' : 'listings-tab'}>
+            {tab === 'inquiries' ? (
+              <>
+                <div className="admin-table-top">
+                  <h2>상담 접수 목록</h2>
+                  <label>
+                    <Filter size={15} />
+                    <select aria-label="진행 상태 필터" value={stage} onChange={(e) => setStage(e.target.value as typeof stage)}>
+                      <option>전체</option>
+                      {inquiryStages.map((s) => (
                         <option key={s}>{s}</option>
                       ))}
                     </select>
                   </label>
-                  <label className="form-field">
-                    <span>상담 등급 · 하향 변경 불가</span>
-                    <select value={current.tier} onChange={(e) => update(current.id, 'tier', Number(e.target.value) as TierId)}>
-                      {([1, 2, 3] as const).map((t) => (
-                        <option key={t} value={t} disabled={t < current.tier}>
-                          {t}등급
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="form-field">
-                    <span>다음 확인 사항</span>
-                    <input value={current.next} maxLength={100} onChange={(e) => update(current.id, 'next', e.target.value)} />
-                  </label>
-                  <label className="form-field">
-                    <span>추가 작업 시간 (분)</span>
-                    <div className="time-input">
-                      <input type="number" min="1" max={MAX_MINUTES} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
-                      <button className="button button-dark" onClick={addTime}>
-                        <Plus size={16} />
-                        반영
-                      </button>
-                    </div>
-                  </label>
                 </div>
-                <p className="small muted">미저장 데모 · 실제 고객 정보는 입력하지 마세요.</p>
-              </div>
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>접수</th>
+                        <th>회사·담당자</th>
+                        <th>유형</th>
+                        <th>검토 후보</th>
+                        <th>진행 상태</th>
+                        <th>담당자</th>
+                        <th>메일</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => (
+                        <tr key={r.id} className={active === r.id ? 'row-active' : ''}>
+                          <td>
+                            #{r.id}
+                            <small>{formatKst(new Date(r.createdAt))}</small>
+                          </td>
+                          <td>
+                            <button className="table-title" onClick={() => setActive(active === r.id ? null : r.id)}>
+                              {r.company}
+                              <ArrowUpRight size={15} />
+                            </button>
+                            <small>
+                              {r.name} · {r.phone}
+                            </small>
+                          </td>
+                          <td>{r.kind === 'partnership' ? `파트너 · ${r.help}` : `${r.tier}등급 ${tiers.find((t) => t.id === r.tier)?.name ?? ''}`}</td>
+                          <td>{r.listings.map((l) => l.name).join(', ') || '—'}</td>
+                          <td>
+                            <span className="status-tag">{r.stage}</span>
+                          </td>
+                          <td>{r.owner || '미배정'}</td>
+                          <td>
+                            <span className={r.mailStatus === 'failed' ? 'status-tag amber' : 'status-tag'}>{mailLabels[r.mailStatus]}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!filtered.length && <Empty title={inquiries.length ? '해당 상태의 상담이 없습니다.' : '아직 접수된 상담이 없습니다.'} />}
+                {current && <InquiryEditor key={current.id} inquiry={current} onClose={() => setActive(null)} />}
+              </>
+            ) : (
+              <ListingTable listings={listings} />
             )}
-          </>
-        ) : (
-          <>
-            <div className="admin-table-top">
-              <h2>공급 정보 확인 상태</h2>
-              <span className="muted small">등록값과 제안 당시 확인값을 구분합니다</span>
-            </div>
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>공급 후보</th>
-                    <th>서류 확인</th>
-                    <th>현장 확인</th>
-                    <th>화주 조건</th>
-                    <th>갱신</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {listings.map((i) => (
-                    <tr key={i.id}>
-                      <td>
-                        <strong>{i.name}</strong>
-                        <small>
-                          {i.region} · {i.type === 'warehouse' ? '공간' : '운영 서비스'} · 예시
-                        </small>
-                      </td>
-                      <td>{i.checks[1]}</td>
-                      <td>{i.checks[2]}</td>
-                      <td>확인 대기</td>
-                      <td>
-                        <span className="status-tag amber">제안 전 재확인</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </section>
-      <div className="admin-bottom">
-        <div className="panel">
-          <SectionTitle title="시범 운영 한도" />
-          <p className="muted">백서의 권장 기본값 · 확정된 운영 실적이 아닙니다</p>
-          <div className="pilot-metrics">
-            <div>
-              <strong>
-                12<small>주</small>
-              </strong>
-              <span>시범 기간</span>
-            </div>
-            <div>
-              <strong>
-                5<small>건</small>
-              </strong>
-              <span>위탁 단독 최대</span>
-            </div>
-            <div>
-              <strong>
-                8<small>h</small>
-              </strong>
-              <span>건당 시간 상한</span>
-            </div>
-            <div>
-              <strong>
-                40<small>h</small>
-              </strong>
-              <span>전체 시간 상한</span>
-            </div>
-          </div>
-        </div>
-        <div className="admin-principle">
-          <span className="eyebrow">OPERATING PRINCIPLE</span>
-          <h3>
-            실제 수용 조건을 먼저,
-            <br />
-            추천 이유는 명확하게.
-          </h3>
-          <p>
-            <Check size={16} />
-            미확인 후보는 확인 대기로 구분
-          </p>
-          <p>
-            <Check size={16} />
-            정보 기한이 지나면 제안 전 재확인
-          </p>
-          <p>
-            <Check size={16} />
-            직접 계약 결과도 별도 확인
-          </p>
-        </div>
-      </div>
+          </section>
+        </>
+      )}
     </div>
+  );
+}
+
+function useAction() {
+  const [pending, startTransition] = useTransition();
+  const notify = useToast();
+  function run(action: () => Promise<ActionResult>, success: string) {
+    startTransition(async () => {
+      try {
+        const result = await action();
+        notify(result.ok ? success : result.error);
+      } catch {
+        notify('권한이 없거나 연결이 끊겼습니다. 다시 로그인해 주세요.');
+      }
+    });
+  }
+  return [pending, run] as const;
+}
+
+function InquiryEditor({ inquiry, onClose }: { inquiry: InquiryRecord; onClose: () => void }) {
+  const [stage, setStage] = useState<InquiryStage>(inquiry.stage);
+  const [owner, setOwner] = useState(inquiry.owner);
+  const [nextAction, setNextAction] = useState(inquiry.nextAction);
+  const [pending, run] = useAction();
+  const details: [string, string][] = [
+    ['연락처', `${inquiry.name} · ${inquiry.phone}`],
+    ['품목 · 물량', `${inquiry.item || '미입력'} · ${inquiry.volume}`],
+    ['지역', inquiry.regionDetail ? `${inquiry.region} · ${inquiry.regionDetail}` : inquiry.region],
+    ['시점 · 온도', `${inquiry.timing} · ${inquiry.temperature}`],
+    ['검토 후보', inquiry.listings.map((l) => l.name).join(', ') || '미정'],
+    ['유입경로', inquiry.source],
+    ['요청사항', inquiry.note || '없음'],
+  ];
+  return (
+    <div className="admin-editor">
+      <div className="section-title">
+        <h3>
+          #{inquiry.id} {inquiry.company}
+        </h3>
+        <button aria-label="상담 편집 닫기" onClick={onClose}>
+          <X size={19} />
+        </button>
+      </div>
+      <dl className="spec-grid admin-detail">
+        {details.map(([k, v]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="form-grid">
+        <label className="form-field">
+          <span>진행 상태</span>
+          <select value={stage} onChange={(e) => setStage(e.target.value as InquiryStage)}>
+            {inquiryStages.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+        <label className="form-field">
+          <span>담당자</span>
+          <input value={owner} maxLength={40} onChange={(e) => setOwner(e.target.value)} placeholder="미배정" />
+        </label>
+        <label className="form-field">
+          <span>다음 확인 사항</span>
+          <input value={nextAction} maxLength={100} onChange={(e) => setNextAction(e.target.value)} placeholder="예: 차량 진입 조건 확인" />
+        </label>
+      </div>
+      <button className="button button-dark" disabled={pending} aria-busy={pending} onClick={() => run(() => saveInquiryProgress(inquiry.id, { stage, owner, nextAction }), '상담 진행 상태를 저장했습니다.')}>
+        <Save size={16} />
+        {pending ? '저장 중…' : '저장'}
+      </button>
+    </div>
+  );
+}
+
+function ListingTable({ listings }: { listings: AdminListing[] }) {
+  const [pending, run] = useAction();
+  const change = (item: AdminListing, visibility: Visibility, message: string) => run(() => changeListingVisibility(item.id, visibility), message);
+  return (
+    <>
+      <div className="admin-table-top">
+        <h2>매물 목록</h2>
+        <span className="muted small">신규 등록은 비공개 · 삭제 대신 보관</span>
+      </div>
+      <div className="table-scroll">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>매물</th>
+              <th>유형</th>
+              <th>노출</th>
+              <th>문의</th>
+              <th>수정</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listings.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <strong>{item.name}</strong>
+                  <small>
+                    {item.id} · {item.region} · {item.district}
+                  </small>
+                </td>
+                <td>{item.type === 'warehouse' ? '창고' : '3PL'}</td>
+                <td>
+                  <span className={item.visibility === 'published' ? 'status-tag' : 'status-tag amber'}>{visibilityLabels[item.visibility]}</span>
+                </td>
+                <td>{item.inquiryCount}건</td>
+                <td>{formatKst(new Date(item.updatedAt))}</td>
+                <td className="admin-row-actions">
+                  <Link className="text-button" href={`/admin/listings/${item.id}`}>
+                    <Pencil size={14} />
+                    수정
+                  </Link>
+                  {item.visibility === 'published' && (
+                    <>
+                      <Link className="text-button" href={listingHref(item)} target="_blank">
+                        보기
+                      </Link>
+                      <button className="text-button" disabled={pending} onClick={() => change(item, 'hidden', `${item.name}을(를) 비공개로 바꿨습니다.`)}>
+                        <EyeOff size={14} />
+                        비공개
+                      </button>
+                    </>
+                  )}
+                  {item.visibility === 'hidden' && (
+                    <>
+                      <button className="text-button" disabled={pending} onClick={() => change(item, 'published', `${item.name}을(를) 공개했습니다.`)}>
+                        <Eye size={14} />
+                        공개
+                      </button>
+                      <button className="text-button" disabled={pending} onClick={() => change(item, 'archived', `${item.name}을(를) 보관했습니다.`)}>
+                        <Archive size={14} />
+                        보관
+                      </button>
+                    </>
+                  )}
+                  {item.visibility === 'archived' && (
+                    <button className="text-button" disabled={pending} onClick={() => change(item, 'hidden', `${item.name}을(를) 비공개로 복원했습니다.`)}>
+                      <RotateCcw size={14} />
+                      복원
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!listings.length && <Empty title="등록된 매물이 없습니다." description="‘매물 등록’으로 첫 매물을 비공개 상태로 등록하세요." />}
+    </>
   );
 }

@@ -16,3 +16,6 @@ next-env.d.ts
 # Playwright
 playwright-report/
 test-results/
+
+# 실매물 가져오기 원본·생성 SQL (저장소 공개 상태이므로 커밋하지 않음)
+supabase/private/

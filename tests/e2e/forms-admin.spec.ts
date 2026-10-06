@@ -1,11 +1,26 @@
 import { expect, test, type Page } from '@playwright/test';
 
 test.describe('consultation form', () => {
-  test('reads tier and candidates from the URL', async ({ page }) => {
+  test('reads tier and candidates from the URL; candidates appear only after submission', async ({ page }) => {
+    await page.route('**/api/inquiry', (route) => route.fulfill({ json: { ok: true } }));
     await page.goto('/consultation?tier=3&candidates=busan-01,partner-01,bogus');
     await expect(page.getByRole('radio', { name: /운영방식 검토/ })).toBeChecked();
-    await expect(page.locator('.target-summary')).toContainText('부산 신항권 상온 물류창고 · 예시');
+    await expect(page.locator('.target-summary')).toHaveCount(0);
+
+    await page.getByRole('button', { name: '기본 조건 입력' }).click();
+    await page.locator('#company').fill('예시 회사');
+    await page.locator('#name').fill('테스트');
+    await page.locator('#phone').fill('010-1234-5678');
+    await page.locator('#item').fill('생활용품');
+    await page.locator('#consent').check();
+    await page.getByRole('button', { name: '준비서 확인' }).click();
+    await expect(page.locator('.prepared-panel pre')).toContainText('검토 후보: 부산 신항권 상온 물류창고, 부산권 수출입 3PL 파트너');
+    await expect(page.locator('.target-summary')).toHaveCount(0);
+
+    await page.getByRole('button', { name: '상담 신청하기' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: '확인' }).click();
     await expect(page.locator('.target-summary span')).toHaveCount(2);
+    await expect(page.locator('.target-summary')).toContainText('부산 신항권 상온 물류창고');
   });
 
   test('validates required fields, focuses the first error, then prepares an unsent summary', async ({ page, context }) => {
@@ -108,32 +123,29 @@ test.describe('consultation form', () => {
   });
 });
 
-test.describe('admin demo', () => {
-  test('tier cannot be lowered and time is validated', async ({ page }) => {
+test.describe('admin workspace', () => {
+  test('is closed to visitors who are not signed in', async ({ page }) => {
     await page.goto('/admin');
-    await page.getByRole('button', { name: /예시 제조 화주 A/ }).click();
-
-    const tierSelect = page.getByLabel('상담 등급 · 하향 변경 불가');
-    await expect(tierSelect.locator('option[value="1"]')).toHaveJSProperty('disabled', true);
-    await tierSelect.selectOption('3');
-    await expect(tierSelect.locator('option[value="2"]')).toHaveJSProperty('disabled', true);
-
-    const minutes = page.locator('.time-input input');
-    await minutes.fill('600');
-    await page.getByRole('button', { name: '반영' }).click();
-    await expect(page.getByRole('status').filter({ hasText: '1~480분 사이의 작업 시간을 입력해 주세요.' })).toBeVisible();
-
-    await minutes.fill('30');
-    await page.getByRole('button', { name: '반영' }).click();
-    await expect(page.locator('tr.row-active')).toContainText('3.0h');
-    await expect(page.locator('.stat-card').nth(2)).toContainText('8.0h');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+    await page.goto('/admin/listings/new');
+    await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
-  test('tier filter and supply tab', async ({ page }) => {
+  test('wrong password is refused; the right one opens the workspace and logout closes it', async ({ page }) => {
+    await page.goto('/admin/login');
+    await page.getByLabel('비밀번호').fill('wrong-password');
+    await page.getByRole('button', { name: '로그인' }).click();
+    await expect(page.locator('#login-error')).toHaveText('비밀번호가 맞지 않습니다.');
+
+    await page.getByLabel('비밀번호').fill('e2e-admin-password');
+    await page.getByRole('button', { name: '로그인' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('운영 워크스페이스');
+    await expect(page.getByText('DB 연결 전입니다.', { exact: false })).toBeVisible();
+
+    await page.getByRole('button', { name: '로그아웃' }).click();
+    await expect(page).toHaveURL(/\/admin\/login$/);
     await page.goto('/admin');
-    await page.getByLabel('상담 등급 필터').selectOption('3');
-    await expect(page.locator('.data-table tbody tr')).toHaveCount(1);
-    await page.getByRole('tab', { name: /공급 확인 이력/ }).click();
-    await expect(page.locator('.data-table tbody tr')).toHaveCount(7);
+    await expect(page).toHaveURL(/\/admin\/login$/);
   });
 });

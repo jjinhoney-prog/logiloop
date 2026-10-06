@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
-import { listingHref } from '@/lib/data';
+import { isExampleListing, listingHref } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { CompareToggle } from './compare-toggle';
 
@@ -57,7 +57,7 @@ export function CatalogCard({ item }: { item: Listing }) {
       <div className={`card-cover region-${item.region}`}>
         <div className="cover-top">
           <span>{warehouse ? 'SPACE' : '3PL PARTNER'}</span>
-          <span className="example-label">예시</span>
+          {isExampleListing(item) && <span className="example-label">예시</span>}
         </div>
         <div className="cover-main">
           <Icon size={44} strokeWidth={1.2} />

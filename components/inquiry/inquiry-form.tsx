@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, Clipboard, Download, FileCheck2, Info, Se
 import { useToast } from '@/components/providers/toast';
 import { PageHeading } from '@/components/ui';
 import { Modal } from '@/components/ui/modal';
-import { findListing, inquiryTemperatureOptions as temperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from '@/lib/data';
+import { inquiryTemperatureOptions as temperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from '@/lib/data';
 import { inquirySummary, summaryFileName } from '@/lib/inquiry-summary';
 import { validateInquiry } from '@/lib/logic';
 import type { InquiryData, InquiryErrors, Listing, TierId } from '@/lib/types';
@@ -17,7 +17,19 @@ const stepLabels = ['필요한 도움', '기본 조건', '준비서 확인'];
 type TextKey = 'company' | 'name' | 'phone' | 'item';
 type SubmitState = 'idle' | 'sending' | 'sent';
 
-export default function InquiryForm({ initialTier = 1, targets = [], partnership = false }: { initialTier?: TierId; targets?: string[]; partnership?: boolean }) {
+export default function InquiryForm({
+  initialTier = 1,
+  targetItems = [],
+  partnership = false,
+  stored = false,
+}: {
+  initialTier?: TierId;
+  /** 서버에서 공개 매물만 골라 넘긴 검토 후보 */
+  targetItems?: Pick<Listing, 'id' | 'name'>[];
+  partnership?: boolean;
+  /** DB 저장 여부. 안내 문구를 실제 처리 방식과 맞춘다 */
+  stored?: boolean;
+}) {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<InquiryErrors>({});
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
@@ -25,7 +37,7 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
   const [website, setWebsite] = useState(''); // 허니팟
   const notify = useToast();
   const submitLabel = partnership ? '파트너 신청하기' : '상담 신청하기';
-  // 입력값은 ‘신청하기’ 전까지 이 컴포넌트 메모리에만 있다. 신청 시 /api/inquiry로 전송되며 서버에 저장하지 않는다.
+  // 입력값은 ‘신청하기’ 전까지 이 컴포넌트 메모리에만 있다. 신청 시 /api/inquiry로 전송된다.
   const [data, setData] = useState<InquiryData>({
     tier: initialTier,
     help: partnership ? '물류사 서비스 소개' : '',
@@ -42,7 +54,6 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
     consent: false,
     source: '직접 방문',
   });
-  const targetItems = targets.map(findListing).filter((item): item is Listing => Boolean(item));
 
   function field<K extends keyof InquiryData>(key: K, value: InquiryData[K]) {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -149,7 +160,9 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
           </ol>
           <div className="form-demo-message">
             <Info size={18} />
-            <span>마지막 단계에서 ‘{partnership ? '파트너 신청하기' : '상담 신청하기'}’를 누르면 로지루프 담당자 메일로 전달됩니다. 입력 내용은 서버에 저장하지 않으며, 준비서를 내려받아 보관할 수도 있습니다.</span>
+            <span>
+              마지막 단계에서 ‘{submitLabel}’를 누르면 {stored ? '상담 기록으로 저장되고 담당자 메일로 전달됩니다' : '로지루프 담당자 메일로 전달됩니다. 입력 내용은 서버에 저장하지 않습니다'}. 준비서를 내려받아 보관할 수도 있습니다.
+            </span>
           </div>
           {step < 3 ? (
             <form className="panel inquiry-panel" onSubmit={next} noValidate>
@@ -181,14 +194,6 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
                           </label>
                         ))}
                   </div>
-                  {targetItems.length > 0 && (
-                    <div className="target-summary">
-                      <strong>함께 검토할 후보</strong>
-                      {targetItems.map((i) => (
-                        <span key={i.id}>{i.name} · 예시</span>
-                      ))}
-                    </div>
-                  )}
                   <p className="muted small">{partnership ? '무료 홍보 범위, 촬영 일정, 게시 채널과 거래 시 비용은 구분해 안내합니다.' : '선택한 도움을 기준으로 담당자가 상담 등급과 제공 범위를 확인합니다.'}</p>
                 </>
               ) : (
@@ -247,11 +252,12 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
                     <label>
                       <input id="consent" type="checkbox" checked={data.consent} onChange={(e) => field('consent', e.target.checked)} aria-invalid={!!errors.consent} />
                       <span>
-                        상담 회신을 위한 개인정보 수집·이용과 메일 발송 서비스(Resend, 미국)로의 국외 이전에 동의합니다. <b>(필수)</b>
+                        상담 회신을 위한 개인정보 수집·이용{stored ? ', 상담 기록 저장(Supabase · 서울 리전)' : ''}과 메일 발송 서비스(Resend, 미국)로의 국외 이전에 동의합니다. <b>(필수)</b>
                       </span>
                     </label>
                     <p>
-                      입력 정보는 신청 시 로지루프 담당자 메일로만 전달되며 서버에 저장하지 않습니다. 동의하지 않으면 신청할 수 없으며, 준비서 다운로드는 가능합니다. <Link href="/privacy">개인정보 안내</Link>
+                      {stored ? '입력 정보는 상담 기록으로 저장되며 상담 종결 후 1년 뒤 파기합니다.' : '입력 정보는 신청 시 로지루프 담당자 메일로만 전달되며 서버에 저장하지 않습니다.'} 동의하지 않으면 신청할 수 없으며, 준비서 다운로드는 가능합니다.{' '}
+                      <Link href="/privacy">개인정보 안내</Link>
                     </p>
                     {errors.consent && <small className="field-error">{errors.consent}</small>}
                   </div>
@@ -284,6 +290,14 @@ export default function InquiryForm({ initialTier = 1, targets = [], partnership
                 <br />
                 {submitState === 'sent' ? '준비서는 내려받아 보관하실 수 있습니다.' : `내용을 확인한 뒤 ‘${submitLabel}’를 눌러 주세요.`}
               </p>
+              {submitState === 'sent' && targetItems.length > 0 && (
+                <div className="target-summary">
+                  <strong>함께 검토할 후보</strong>
+                  {targetItems.map((i) => (
+                    <span key={i.id}>{i.name}</span>
+                  ))}
+                </div>
+              )}
               <pre>{summary()}</pre>
               <div className="form-actions">
                 <button className="button button-outline" onClick={() => setStep(2)} disabled={submitState !== 'idle'}>

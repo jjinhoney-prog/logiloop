@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, Info, Plus, X } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
 import { DemoNotice, Empty, PageHeading } from '@/components/ui';
-import { findListing, listingHref } from '@/lib/data';
+import { listingHref } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 
 const rows: [label: string, get: (item: Listing) => string][] = [
@@ -20,9 +20,9 @@ const rows: [label: string, get: (item: Listing) => string][] = [
   ['화주 조건 수용 확인', () => '확인 대기'],
 ];
 
-export default function Compare() {
+export default function Compare({ catalog }: { catalog: Listing[] }) {
   const { selected, toggle, clear, ready } = useCompare();
-  const items = selected.map(findListing).filter((item): item is Listing => Boolean(item));
+  const items = selected.map((id) => catalog.find((item) => item.id === id)).filter((item): item is Listing => Boolean(item));
 
   return (
     <div className="page">
@@ -32,7 +32,7 @@ export default function Compare() {
           후보 추가
         </Link>
       </PageHeading>
-      <DemoNotice>예시 후보의 공개 조건 비교입니다. 담당자가 검토한 견적·제안서가 아닙니다.</DemoNotice>
+      <DemoNotice>후보의 공개 조건 비교입니다. 담당자가 검토한 견적·제안서가 아닙니다.</DemoNotice>
       {!ready ? (
         <p role="status">비교함을 불러오는 중입니다.</p>
       ) : !items.length ? (

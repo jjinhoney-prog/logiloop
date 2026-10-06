@@ -42,6 +42,8 @@ export interface Listing {
   /** 권역 대표 중심점(WGS84). 실제 매물 위치가 아니다. */
   lat: number;
   lng: number;
+  /** 지음부동산 홈페이지 매물 상세 주소. 있으면 실매물, 없으면 화면 확인용 예시 */
+  sourceUrl?: string;
 }
 
 export interface Hub {
@@ -68,16 +70,45 @@ export interface Article {
   sections: [title: string, body: string][];
 }
 
-export interface DemoInquiry {
-  id: string;
-  company: string;
-  item: string;
-  region: string;
+export type Visibility = 'hidden' | 'published' | 'archived';
+
+/** 관리자 화면에서 쓰는 매물. 공개 화면에는 published만 Listing으로 내려간다. */
+export interface AdminListing extends Listing {
+  visibility: Visibility;
+  sortOrder: number;
+  updatedAt: string;
+  inquiryCount: number;
+}
+
+/** 공개 매물 요약. 비교함 ID 검증과 WebMCP 도구에 사용 */
+export type ListingSummary = Pick<Listing, 'id' | 'name' | 'region' | 'type' | 'temperature'>;
+
+export type InquiryStage = '접수' | '연락 중' | '검토 중' | '종결';
+
+export type MailStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+
+export interface InquiryRecord {
+  id: number;
+  kind: 'consultation' | 'partnership';
   tier: TierId;
-  status: string;
+  help: string;
+  company: string;
+  name: string;
+  phone: string;
+  item: string;
+  volume: string;
+  region: string;
+  regionDetail: string;
+  timing: string;
+  temperature: string;
+  note: string;
+  source: string;
+  stage: InquiryStage;
   owner: string;
-  hours: number;
-  next: string;
+  nextAction: string;
+  mailStatus: MailStatus;
+  createdAt: string;
+  listings: Pick<Listing, 'id' | 'name'>[];
 }
 
 export interface InquiryData {

@@ -1,10 +1,11 @@
-import { findListing, hubs } from '@/lib/data';
+import { hubs } from '@/lib/data';
 import { DISTANCE_REVALIDATE_SECONDS, fetchHubDistances } from '@/lib/distance';
+import { getPublicListing } from '@/lib/listings';
 
-// 좌표를 직접 받지 않고 매물 ID로 서버에서 조회한다. 카카오 REST 키는 서버에서만 사용한다.
+// 좌표를 직접 받지 않고 매물 ID로 서버에서 조회한다(공개 매물만). 카카오 REST 키는 서버에서만 사용한다.
 export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get('id') ?? '';
-  const listing = findListing(id);
+  const listing = await getPublicListing(id);
   if (!listing) {
     return Response.json({ ok: false, error: '매물을 찾을 수 없습니다.' }, { status: 404 });
   }

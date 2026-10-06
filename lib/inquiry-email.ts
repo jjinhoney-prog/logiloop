@@ -1,6 +1,6 @@
-import { findListing, inquiryTemperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from './data';
+import { inquiryTemperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from './data';
 import { COMPARE_LIMIT, validateInquiry } from './logic';
-import type { InquiryData, InquiryErrors, TierId } from './types';
+import type { InquiryData, InquiryErrors, Listing, TierId } from './types';
 
 /** 폼의 maxLength와 같은 값. 서버에서 다시 자른다. */
 export const FIELD_LIMITS = { company: 100, name: 100, phone: 20, item: 100, volume: 100, regionDetail: 150, note: 2000 } as const;
@@ -15,14 +15,16 @@ export interface InquiryPayload extends InquiryData {
 export interface NormalizedInquiry {
   data: InquiryData;
   partnership: boolean;
+  /** 공개 매물 중 실제로 존재하는 후보만 남긴 ID (최대 3개) */
+  targetIds: string[];
   targetNames: string[];
 }
 
 const str = (value: unknown, max: number) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 const pick = (value: unknown, allowed: readonly string[], fallback: string) => (typeof value === 'string' && allowed.includes(value) ? value : fallback);
 
-/** 신뢰할 수 없는 요청 본문을 폼과 같은 규칙으로 정리하고 검증한다. */
-export function normalizeInquiry(body: unknown): { value: NormalizedInquiry; errors: InquiryErrors } {
+/** 신뢰할 수 없는 요청 본문을 폼과 같은 규칙으로 정리하고 검증한다. catalog는 공개 매물 목록이다. */
+export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'name'>[]): { value: NormalizedInquiry; errors: InquiryErrors } {
   const raw = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   const partnership = raw.partnership === true;
   const tier = ([1, 2, 3] as const).find((t) => t === raw.tier) ?? (1 as TierId);
@@ -43,11 +45,14 @@ export function normalizeInquiry(body: unknown): { value: NormalizedInquiry; err
     source: pick(raw.source, sourceOptions, '기타'),
   };
   const targets = Array.isArray(raw.targets) ? raw.targets.filter((id): id is string => typeof id === 'string') : [];
-  const targetNames = [...new Set(targets)]
-    .map((id) => findListing(id)?.name)
-    .filter((name): name is string => Boolean(name))
+  const matched = [...new Set(targets)]
+    .map((id) => catalog.find((item) => item.id === id))
+    .filter((item): item is Pick<Listing, 'id' | 'name'> => Boolean(item))
     .slice(0, COMPARE_LIMIT);
-  return { value: { data, partnership, targetNames }, errors: validateInquiry(data, partnership) };
+  return {
+    value: { data, partnership, targetIds: matched.map((item) => item.id), targetNames: matched.map((item) => item.name) },
+    errors: validateInquiry(data, partnership),
+  };
 }
 
 export function isHoneypotFilled(body: unknown) {
@@ -100,7 +105,12 @@ export function emailRows({ data, targetNames }: NormalizedInquiry, receivedAt: 
   ];
 }
 
-export function buildEmailHtml(inquiry: NormalizedInquiry, receivedAt: Date) {
+/** inquiryId가 있으면 DB 접수번호를, 없으면 메일 전용 접수임을 메일 하단에 적는다. */
+export function storageNote(inquiryId?: number) {
+  return inquiryId ? `DB 접수번호 #${inquiryId} · 운영 워크스페이스(/admin)에서 진행 상태를 관리합니다.` : '웹사이트 DB에 저장되지 않은 접수입니다. 이 메일을 보관해 주세요.';
+}
+
+export function buildEmailHtml(inquiry: NormalizedInquiry, receivedAt: Date, inquiryId?: number) {
   const { data, partnership } = inquiry;
   const kind = partnership ? `파트너 참여 신청 · ${data.help}` : `물류거점 상담 신청 · ${data.tier}등급 ${tiers.find((t) => t.id === data.tier)!.name}`;
   const cell = 'padding:10px 14px;border-bottom:1px solid #E5E7EB;vertical-align:top;font-size:14px;line-height:1.6';
@@ -116,13 +126,11 @@ export function buildEmailHtml(inquiry: NormalizedInquiry, receivedAt: Date) {
     `<p style="margin:0 0 6px;font-size:12px;color:#6B7280">로지루프 · 신규 접수</p>` +
     `<h1 style="margin:0 0 16px;font-size:18px">${escapeHtml(kind)}</h1>` +
     `<table role="presentation" style="border-collapse:collapse;width:100%;max-width:640px;border:1px solid #E5E7EB">${rows}</table>` +
-    `<p style="margin:16px 0 0;font-size:12px;color:#6B7280">웹사이트 상담 폼에서 자동 전달된 메일입니다. 서버에는 저장하지 않았습니다.</p>` +
+    `<p style="margin:16px 0 0;font-size:12px;color:#6B7280">웹사이트 상담 폼에서 자동 전달된 메일입니다. ${escapeHtml(storageNote(inquiryId))}</p>` +
     `</body></html>`
   );
 }
 
-export function buildEmailText(inquiry: NormalizedInquiry, receivedAt: Date) {
-  return emailRows(inquiry, receivedAt)
-    .map(([label, value]) => `${label}: ${value}`)
-    .join('\n');
+export function buildEmailText(inquiry: NormalizedInquiry, receivedAt: Date, inquiryId?: number) {
+  return [...emailRows(inquiry, receivedAt).map(([label, value]) => `${label}: ${value}`), '', storageNote(inquiryId)].join('\n');
 }

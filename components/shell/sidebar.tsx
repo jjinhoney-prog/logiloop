@@ -44,7 +44,7 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
         <Link className="side-secondary" href="/admin" onClick={onNavigate}>
           <Settings2 size={18} />
           운영 워크스페이스
-          <span className="tiny-badge">DEMO</span>
+          <span className="tiny-badge">관리자</span>
         </Link>
         <div className="side-copyright">© LOGILOOP · 지음부동산중개법인(주)</div>
       </div>

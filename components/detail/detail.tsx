@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, CircleHelp, MapPin, Truck, Warehouse } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, CircleHelp, MapPin, Truck, Warehouse } from 'lucide-react';
 import { DemoNotice, PageHeading, SectionTitle } from '@/components/ui';
+import { isExampleListing } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { DetailCompareButton } from './detail-compare-button';
 import { LocationSection } from './location-section';
@@ -9,6 +10,7 @@ const checkLabels = ['공급자 입력', '서류 확인', '현장 확인', '해�
 
 export default function Detail({ item }: { item: Listing }) {
   const warehouse = item.type === 'warehouse';
+  const example = isExampleListing(item);
   const Icon = warehouse ? Warehouse : Truck;
   const specs = [
     ['소재 권역', item.district],
@@ -25,7 +27,9 @@ export default function Detail({ item }: { item: Listing }) {
         목록으로
       </Link>
       <PageHeading eyebrow={warehouse ? 'LOGISTICS SPACE' : 'LOGISTICS PARTNER'} title={item.name} description={item.district} />
-      <DemoNotice>가상 예시 자료입니다. 실제 업체·공실·가격·수용 능력을 나타내지 않습니다.</DemoNotice>
+      <DemoNotice>
+        {example ? '가상 예시 자료입니다. 실제 업체·공실·가격·수용 능력을 나타내지 않습니다.' : '지음부동산중개법인 등록 매물입니다. 임대 조건과 입주 가능일은 상담 시 다시 확인합니다.'}
+      </DemoNotice>
       <div className="detail-layout">
         <div>
           <div className={warehouse ? 'detail-banner' : 'detail-banner detail-banner-partner'}>
@@ -71,7 +75,7 @@ export default function Detail({ item }: { item: Listing }) {
                 );
               })}
             </div>
-            <p className="muted small">기준일: 예시 자료 · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.</p>
+            <p className="muted small">기준일: {example ? '예시 자료' : '지음부동산 등록 정보'} · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.</p>
           </section>
           <section className="panel">
             <SectionTitle title="검토할 조건" />
@@ -101,6 +105,12 @@ export default function Detail({ item }: { item: Listing }) {
             다른 후보까지 비교
           </Link>
           <DetailCompareButton id={item.id} />
+          {item.sourceUrl && (
+            <a className="button button-outline" href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
+              지음부동산 매물 상세
+              <ArrowUpRight size={16} />
+            </a>
+          )}
           <hr />
           <p className="small">
             <MapPin size={15} />
