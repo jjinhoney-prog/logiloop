@@ -147,15 +147,24 @@ hr{border:0;border-top:1px solid var(--line);margin:26px 0}
 .catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 .catalog-card{background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
 .card-cover{background:#e6edee;padding:17px 20px 13px;color:#466970;min-height:164px}
-.region-김해{background:#e9eddf;color:#657249}
-.region-양산{background:#e3edf3;color:#547e95}
-.region-창원{background:#ece9e3;color:#82715a}
+.temp-ambient{--temp-bg:#f4eddf;--temp-ink:#80622a;--temp-dot:#d29a32}
+.temp-chilled{--temp-bg:#dfeff7;--temp-ink:#2a6888;--temp-dot:#3f9fd0}
+.temp-frozen{--temp-bg:#e4e6f7;--temp-ink:#444d9a;--temp-dot:#6470d8}
+.temp-mixed{--temp-bg:#e3f0e9;--temp-ink:#356c58;--temp-dot:#3f9c78}
+.temp-unknown{--temp-bg:#eceff0;--temp-ink:#64757b;--temp-dot:#a5b2b6}
+.card-cover[class*=temp-]{background:var(--temp-bg);color:var(--temp-ink)}
+.temp-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 8px;border-radius:999px;background:var(--temp-bg);color:var(--temp-ink);font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap}
+.temp-chip:before{content:'';width:7px;height:7px;border-radius:50%;background:var(--temp-dot)}
+.card-cover .temp-chip{background:#ffffffb8}
+.type-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:.5px;background:#ffffffa6;color:var(--ink)}
+.type-partner{background:var(--navy);color:var(--lime)}
+.num{font-family:var(--font-manrope),sans-serif;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-.01em}
 .cover-top{display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:1.2px;font-weight:700}
 .example-label{border:1px solid currentColor;border-radius:4px;padding:0 5px;font-size:9px;opacity:.7}
 .cover-main{display:flex;align-items:center;gap:18px;margin:14px 0}
 .cover-main>span{font-size:27px;font-weight:800;line-height:1.4;letter-spacing:-1px}
 .cover-main small{display:block;font-size:8px;letter-spacing:1.6px;font-weight:500}
-.cover-bottom{display:flex;justify-content:space-between;font-size:10px;opacity:.85;border-top:1px solid #264a4a15;padding-top:9px}
+.cover-bottom{display:flex;justify-content:space-between;align-items:center;font-size:11px;border-top:1px solid #264a4a15;padding-top:9px}
 .card-body{padding:19px 19px 0}
 .card-location{font-size:11px;color:#819095;margin-bottom:6px}
 .card-title{font-size:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;font-weight:800;letter-spacing:-.04em;line-height:1.5}
@@ -270,6 +279,8 @@ footer a{display:flex;align-items:center;gap:5px}
 .comparison-table thead th:first-child{width:155px;vertical-align:bottom;font-size:13px}
 .comparison-table tbody th{background:#f9fbfc;font-size:12px;color:#75858c;font-weight:500}
 .comparison-table h3{margin:16px 0 12px;font-size:16px}
+.compare-head-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.detail-banner[class*=temp-]{background:var(--temp-bg);color:var(--temp-ink);border-color:transparent}
 .comparison-table a{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--teal)}
 .chip{display:inline-flex;border:1px solid #dce6e4;padding:4px 9px;border-radius:5px;background:#edf4f1;color:#4e7969;font-size:11px}
 .remove-candidate{position:absolute;right:10px;top:10px;padding:5px;color:#839399}

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
-import { isExampleListing, listingHref } from '@/lib/data';
+import { isExampleListing, listingHref, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
@@ -50,14 +50,23 @@ export function Empty({
   );
 }
 
+/** 온도대 칩. 상온·냉장·냉동은 정해진 규격이라 어느 화면에서나 같은 색을 쓴다. */
+export function TempChip({ value }: { value: string }) {
+  return <span className={`temp-chip temp-${temperatureTone(value)}`}>{value}</span>;
+}
+
+export function TypeBadge({ type }: { type: Listing['type'] }) {
+  return <span className={`type-badge type-${type}`}>{type === 'warehouse' ? '창고' : '3PL'}</span>;
+}
+
 export function CatalogCard({ item }: { item: Listing }) {
   const warehouse = item.type === 'warehouse';
   const Icon = warehouse ? Warehouse : Truck;
   return (
     <article className="catalog-card">
-      <div className={`card-cover region-${item.region}`}>
+      <div className={`card-cover temp-${temperatureTone(item.temperature)}`}>
         <div className="cover-top">
-          <span>{warehouse ? 'SPACE' : '3PL PARTNER'}</span>
+          <TypeBadge type={item.type} />
           {isExampleListing(item) && <span className="example-label">예시</span>}
         </div>
         <div className="cover-main">
@@ -68,8 +77,8 @@ export function CatalogCard({ item }: { item: Listing }) {
           </span>
         </div>
         <div className="cover-bottom">
-          <span>{item.temperature}</span>
-          <span>{item.capacity}</span>
+          <TempChip value={item.temperature} />
+          <span className="num">{item.capacity}</span>
         </div>
       </div>
       <div className="card-body">

@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, CircleHelp, MapPin, Truck, Warehouse } from 'lucide-react';
-import { DemoNotice, PageHeading, SectionTitle } from '@/components/ui';
-import { isExampleListing } from '@/lib/data';
+import type { ReactNode } from 'react';
+import { DemoNotice, PageHeading, SectionTitle, TempChip } from '@/components/ui';
+import { isExampleListing, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { DetailCompareButton } from './detail-compare-button';
 import { LocationSection } from './location-section';
@@ -12,9 +13,9 @@ export default function Detail({ item }: { item: Listing }) {
   const warehouse = item.type === 'warehouse';
   const example = isExampleListing(item);
   const Icon = warehouse ? Warehouse : Truck;
-  const specs = [
+  const specs: [string, ReactNode][] = [
     ['소재 권역', item.district],
-    ['온도대', item.temperature],
+    ['온도대', <TempChip key="temp" value={item.temperature} />],
     ['규모', item.area ? `${item.area.toLocaleString()}㎡ (${item.capacity})` : item.capacity],
     ['비용', item.price],
     ['입주·수용 일정', item.available],
@@ -32,7 +33,7 @@ export default function Detail({ item }: { item: Listing }) {
       </DemoNotice>
       <div className="detail-layout">
         <div>
-          <div className={warehouse ? 'detail-banner' : 'detail-banner detail-banner-partner'}>
+          <div className={warehouse ? `detail-banner temp-${temperatureTone(item.temperature)}` : 'detail-banner detail-banner-partner'}>
             <Icon size={70} strokeWidth={1} />
             <div>
               <span>{warehouse ? 'SPACE PROFILE' : 'SERVICE PROFILE'}</span>

@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { ArrowRight, Info, Plus, X } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
-import { DemoNotice, Empty, PageHeading } from '@/components/ui';
+import type { ReactNode } from 'react';
+import { DemoNotice, Empty, PageHeading, TempChip, TypeBadge } from '@/components/ui';
 import { listingHref } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 
-const rows: [label: string, get: (item: Listing) => string][] = [
-  ['유형', (i) => (i.type === 'warehouse' ? '직접 임차 후보' : '3PL 위탁 후보')],
+const rows: [label: string, get: (item: Listing) => ReactNode][] = [
+  ['유형', (i) => <TypeBadge type={i.type} />],
   ['지역', (i) => i.district],
-  ['온도대', (i) => i.temperature],
-  ['공간·처리 규모', (i) => i.capacity],
+  ['온도대', (i) => <TempChip value={i.temperature} />],
+  ['공간·처리 규모', (i) => <span className="num">{i.capacity}</span>],
   ['서비스', (i) => i.service],
   ['비용 조건', (i) => i.price],
   ['일정', (i) => i.available],
@@ -66,8 +67,9 @@ export default function Compare({ catalog }: { catalog: Listing[] }) {
                       <button aria-label={`${i.name} 비교에서 제거`} className="remove-candidate" onClick={() => toggle(i.id)}>
                         <X size={17} />
                       </button>
-                      <span className="chip">
-                        {i.region} · {i.temperature}
+                      <span className="compare-head-chips">
+                        <span className="chip">{i.region}</span>
+                        <TempChip value={i.temperature} />
                       </span>
                       <h3>{i.name}</h3>
                       <Link href={listingHref(i)}>

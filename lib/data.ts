@@ -47,6 +47,17 @@ export const visibilityLabels: Record<Visibility, string> = { hidden: '비공개
 export const inquiryStages = ['접수', '연락 중', '검토 중', '종결'] as const;
 export const listingTemperatures = ['상온', '냉장', '냉동', '복수 온도대', '확인 필요'];
 
+export type TemperatureTone = 'ambient' | 'chilled' | 'frozen' | 'mixed' | 'unknown';
+
+/** 온도대는 정해진 규격이라 화면 전체에서 같은 색으로 구분한다(globals.css .temp-*). */
+export function temperatureTone(temperature: string): TemperatureTone {
+  if (temperature === '상온') return 'ambient';
+  if (temperature === '냉장') return 'chilled';
+  if (temperature === '냉동') return 'frozen';
+  if (temperature === '복수 온도대') return 'mixed';
+  return 'unknown';
+}
+
 /** 지음부동산 홈페이지 매물 상세 주소만 출처로 허용한다(supabase/002_source_url.sql과 같은 규칙). */
 export const SOURCE_URL_PATTERN = /^https:\/\/ziumrealty\.com\/item\/view\/\d{1,8}$/;
 
