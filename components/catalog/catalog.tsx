@@ -4,12 +4,10 @@ import { Select } from '@/components/ui/select';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { useCompare } from '@/components/providers/compare-provider';
 import { CatalogCard, DemoNotice, Empty, PageHeading } from '@/components/ui';
 import { isExampleListing } from '@/lib/data';
 import { filterListings } from '@/lib/logic';
 import type { Listing, ListingType } from '@/lib/types';
-import { ComparisonDock } from './comparison-dock';
 import { Filters, type FilterState } from './filters';
 
 type Sort = 'default' | 'name' | 'area';
@@ -19,7 +17,6 @@ const initialFilters: FilterState = { query: '', region: '전체 지역', temper
 export default function Catalog({ type, items }: { type: ListingType; items: Listing[] }) {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [sort, setSort] = useState<Sort>('default');
-  const { selected } = useCompare();
   const warehouse = type === 'warehouse';
   const examplesOnly = items.every(isExampleListing);
 
@@ -82,7 +79,6 @@ export default function Catalog({ type, items }: { type: ListingType; items: Lis
           <ArrowRight size={18} />
         </Link>
       </div>
-      {selected.length > 0 && <ComparisonDock count={selected.length} />}
     </div>
   );
 }

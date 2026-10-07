@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { ComparisonDock } from '@/components/catalog/comparison-dock';
 import { Footer } from './footer';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
@@ -11,6 +12,8 @@ import { Topbar } from './topbar';
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const showConsultation = !['/consultation', '/partnership', '/admin'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  // 상담·제휴 폼과 관리자 화면, 비교함 자체에서는 비교 바를 띄우지 않는다
+  const showDock = showConsultation && pathname !== '/compare';
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   return (
@@ -27,6 +30,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         <Topbar />
         <main id="main" tabIndex={-1}>
           {children}
+          {showDock && <ComparisonDock />}
         </main>
         <Footer />
         {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">상담 신청하기<ArrowRight size={17} /></Link></div>}

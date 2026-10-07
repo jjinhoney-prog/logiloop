@@ -215,8 +215,9 @@ footer a{display:flex;align-items:center;gap:5px}
 .inline-help strong{font-size:16px}
 .inline-help p{font-size:13px;color:var(--muted);margin:6px 0 0}
 .inline-help a{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:700;white-space:nowrap}
-.comparison-dock{position:sticky;bottom:20px;margin:25px auto 0;background:var(--navy);color:white;display:flex;gap:30px;align-items:center;justify-content:space-between;box-shadow:0 6px 28px #142b3230;border-radius:12px;padding:15px 20px;max-width:500px;font-size:13px}
+.comparison-dock{position:sticky;bottom:20px;z-index:20;margin:-30px auto 24px;width:calc(100% - 40px);background:var(--navy);color:white;display:flex;gap:30px;align-items:center;justify-content:space-between;box-shadow:0 6px 28px #142b3230;border-radius:12px;padding:15px 20px;max-width:500px;font-size:13px}
 .comparison-dock b{color:var(--lime)}
+.comparison-dock small{display:block;font-size:11px;color:#9fb6bc}
 .empty-state{text-align:center;background:white;padding:65px 20px;border:1px solid var(--line);border-radius:14px}
 .empty-state h3{margin-top:20px}
 .empty-state p{font-size:14px;color:var(--muted)}
@@ -437,7 +438,10 @@ footer a{display:flex;align-items:center;gap:5px}
 /* ============================================================
    Toast · loading
    ============================================================ */
-.toast{position:fixed;bottom:25px;left:calc(50% + 119px);transform:translate(-50%,25px);opacity:0;pointer-events:none;background:var(--navy);color:white;padding:14px 24px;border-radius:9px;font-size:13px;z-index:70;transition:all .2s;box-shadow:0 5px 25px #142b3225;max-width:90vw}
+.toast{position:fixed;top:22px;left:calc(50% + 119px);transform:translate(-50%,-20px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:9px;background:white;color:var(--ink);border:1px solid var(--line);border-left:4px solid var(--teal);padding:13px 22px 13px 16px;border-radius:9px;font-size:13px;font-weight:600;z-index:70;transition:all .2s;box-shadow:0 8px 28px #142b3226;max-width:90vw}
+.toast svg{color:var(--teal)}
+.toast-warning{background:#fff8eb;border-color:#f3dcae;border-left-color:#e08a00}
+.toast-warning svg{color:#c77700}
 .toast.visible{opacity:1;transform:translate(-50%,0)}
 .mobile-menu,.nav-backdrop{display:none}
 .loading-state{display:flex;gap:12px;align-items:center;color:var(--muted);min-height:300px}
@@ -637,7 +641,7 @@ footer a{display:flex;align-items:center;gap:5px}
   .inline-help strong{font-size:15px}
   .inline-help p{font-size:12px}
   .inline-help a{font-size:12px}
-  .comparison-dock{bottom:12px;padding:12px;gap:10px;font-size:12px}
+  .comparison-dock{bottom:12px;padding:12px;gap:10px;font-size:12px;width:calc(100% - 32px)}
   .comparison-dock .button{font-size:11px;padding:9px 12px;min-height:38px}
   .detail-banner{padding:25px;gap:22px}
   .detail-banner>svg{width:50px;height:50px}
@@ -722,7 +726,7 @@ footer a{display:flex;align-items:center;gap:5px}
   footer{padding:25px 20px;font-size:10px;gap:13px}
   footer>div{gap:13px;flex-wrap:wrap}
   footer>div:first-child{align-items:flex-start;flex-direction:column;gap:5px}
-  .toast{left:50%;font-size:12px;width:max-content;max-width:calc(100vw - 30px);padding:12px 18px}
+  .toast{left:50%;top:14px;font-size:12px;width:max-content;max-width:calc(100vw - 30px);padding:12px 16px 12px 13px}
   .empty-state{padding:50px 18px}
   .empty-state p{font-size:13px}
   .empty-state h1{font-size:27px}
@@ -956,7 +960,6 @@ footer a{display:flex;align-items:center;gap:5px}
  .mobile-consultation{position:fixed;inset:auto 0 0;display:block;padding:10px 20px calc(10px + env(safe-area-inset-bottom));background:#ffffffef;border-top:1px solid var(--line);z-index:34}
  .mobile-consultation .button{width:100%;min-height:48px}
  .has-mobile-consultation .comparison-dock{bottom:calc(84px + env(safe-area-inset-bottom));z-index:25}
- .has-mobile-consultation .toast{bottom:calc(90px + env(safe-area-inset-bottom))}
  .filter-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
  .filter-row .filter-label{grid-column:1/-1}
  .select-field{min-width:0}

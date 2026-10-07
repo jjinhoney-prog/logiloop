@@ -84,7 +84,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
 
   function toggle(id: string) {
     if (!selected.includes(id) && selected.length >= COMPARE_LIMIT) {
-      notify('비교 후보는 최대 3개까지 담을 수 있습니다.');
+      notify('비교 후보는 최대 3개까지 담을 수 있습니다.', 'warning');
       return;
     }
     setSelected((prev) => toggleSelection(prev, id));
