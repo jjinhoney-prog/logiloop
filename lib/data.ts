@@ -62,3 +62,15 @@ export function temperatureTone(temperature: string): TemperatureTone {
 export const SOURCE_URL_PATTERN = /^https:\/\/ziumrealty\.com\/item\/view\/\d{1,8}$/;
 
 export const isExampleListing = (item: Pick<Listing, 'sourceUrl'>) => !item.sourceUrl;
+
+const SQM_PER_PYEONG = 3.3058;
+const SPLIT_MIN_PYEONG = 1000;
+const SPLIT_MAX_PYEONG = 3000;
+
+/** 화면에 보여줄 규모. 1,000평 넘는 물류센터는 분할 임대 범위(1,000평~최대 3,000평)로 표기한다. */
+export function capacityLabel(item: Pick<Listing, 'name' | 'area' | 'capacity'>): string {
+  if (!item.area || !item.name.includes('물류센터')) return item.capacity;
+  const pyeong = Math.round(item.area / SQM_PER_PYEONG);
+  if (pyeong <= SPLIT_MIN_PYEONG) return item.capacity;
+  return `${SPLIT_MIN_PYEONG.toLocaleString()}~${Math.min(pyeong, SPLIT_MAX_PYEONG).toLocaleString()}평 임대 가능`;
+}

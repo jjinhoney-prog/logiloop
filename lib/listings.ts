@@ -6,7 +6,7 @@ import { db, isDbConfigured } from './supabase';
 import type { AdminListing, Listing, ListingSummary, ListingType, VerificationChecks, Visibility } from './types';
 
 const COLUMNS =
-  'id,type,visibility,name,region,province,district,temperature,area,capacity,price,available,status_note,tags,height,power,service,suitability,limitation,checks,lat,lng,sort_order,updated_at,source_url';
+  'id,type,visibility,name,region,province,district,temperature,area,capacity,price,available,status_note,tags,height,power,service,suitability,limitation,checks,lat,lng,sort_order,updated_at,source_url,image_url';
 
 interface ListingRow {
   id: string;
@@ -34,6 +34,7 @@ interface ListingRow {
   sort_order: number;
   updated_at: string;
   source_url: string | null;
+  image_url?: string | null;
 }
 
 function toListing(row: ListingRow): Listing {
@@ -61,6 +62,7 @@ function toListing(row: ListingRow): Listing {
     lat: row.lat,
     lng: row.lng,
     sourceUrl: row.source_url ?? undefined,
+    imageUrl: row.image_url ?? undefined,
   };
 }
 
@@ -91,23 +93,27 @@ function toRow(input: ListingInput) {
   };
 }
 
-// supabase/002_source_url.sql 실행 전 DB에서도 동작하도록, source_url 컬럼이 없으면 그 컬럼만 빼고 다시 요청한다.
-let sourceUrlColumn = true;
-const columns = () => (sourceUrlColumn ? COLUMNS : COLUMNS.replace(',source_url', ''));
-const missingSourceUrl = (error: { code?: string; message: string } | null) =>
-  Boolean(error && (error.code === '42703' || error.code === 'PGRST204') && error.message.includes('source_url'));
+// supabase/002_source_url.sql·004_image_url.sql 실행 전 DB에서도 동작하도록, 없는 컬럼은 빼고 다시 요청한다.
+const OPTIONAL_COLUMNS = ['image_url', 'source_url'] as const;
+const missingColumns = new Set<string>();
+const columns = () => COLUMNS.split(',').filter((column) => !missingColumns.has(column)).join(',');
+const sourceUrlColumn = () => !missingColumns.has('source_url');
 
 async function withSourceUrlFallback<T extends { error: { code?: string; message: string } | null }>(run: () => PromiseLike<T>): Promise<T> {
-  const first = await run();
-  if (!sourceUrlColumn || !missingSourceUrl(first.error)) return first;
-  console.warn('[listings] source_url column missing — run supabase/002_source_url.sql');
-  sourceUrlColumn = false;
-  return run();
+  let result = await run();
+  for (;;) {
+    const { error } = result;
+    const missing = error && (error.code === '42703' || error.code === 'PGRST204') ? OPTIONAL_COLUMNS.find((column) => !missingColumns.has(column) && error.message.includes(column)) : undefined;
+    if (!missing) return result;
+    console.warn(`[listings] ${missing} column missing — run supabase/${missing === 'image_url' ? '004_image_url' : '002_source_url'}.sql`);
+    missingColumns.add(missing);
+    result = await run();
+  }
 }
 
 const rowFor = (input: ListingInput) => {
   const row: Record<string, unknown> = toRow(input);
-  if (!sourceUrlColumn) delete row.source_url;
+  if (!sourceUrlColumn()) delete row.source_url;
   return row;
 };
 

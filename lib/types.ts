@@ -44,6 +44,8 @@ export interface Listing {
   lng: number;
   /** 지음부동산 홈페이지 매물 상세 주소. 있으면 실매물, 없으면 화면 확인용 예시 */
   sourceUrl?: string;
+  /** 지음부동산 홈페이지에 올린 대표 사진 주소 */
+  imageUrl?: string;
 }
 
 export interface Hub {

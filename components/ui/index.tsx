@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
-import { isExampleListing, listingHref, temperatureTone } from '@/lib/data';
+import { capacityLabel, isExampleListing, listingHref, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
@@ -64,21 +64,28 @@ export function CatalogCard({ item }: { item: Listing }) {
   const Icon = warehouse ? Warehouse : Truck;
   return (
     <article className="catalog-card">
-      <div className={`card-cover temp-${temperatureTone(item.temperature)}`}>
+      <div className={`card-cover temp-${temperatureTone(item.temperature)}${item.imageUrl ? ' card-cover-photo' : ''}`}>
+        {item.imageUrl && (
+          // 지음 홈페이지 원본 사진을 그대로 쓴다(Vercel 이미지 최적화 사용량을 쓰지 않음).
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="cover-image" src={item.imageUrl} alt={`${item.name} 외관 사진`} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+        )}
         <div className="cover-top">
           <TypeBadge type={item.type} />
           {isExampleListing(item) && <span className="example-label">예시</span>}
         </div>
-        <div className="cover-main">
-          <Icon size={44} strokeWidth={1.2} />
-          <span>
-            {item.region}
-            <small>{warehouse ? 'LOGISTICS SPACE' : 'LOGISTICS SERVICE'}</small>
-          </span>
-        </div>
+        {!item.imageUrl && (
+          <div className="cover-main">
+            <Icon size={44} strokeWidth={1.2} />
+            <span>
+              {item.region}
+              <small>{warehouse ? 'LOGISTICS SPACE' : 'LOGISTICS SERVICE'}</small>
+            </span>
+          </div>
+        )}
         <div className="cover-bottom">
           <TempChip value={item.temperature} />
-          <span className="num">{item.capacity}</span>
+          <span className="num">{capacityLabel(item)}</span>
         </div>
       </div>
       <div className="card-body">

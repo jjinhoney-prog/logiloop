@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, CircleHelp, MapPin, Truck, Warehouse } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { DemoNotice, PageHeading, SectionTitle, TempChip } from '@/components/ui';
-import { isExampleListing, temperatureTone } from '@/lib/data';
+import { capacityLabel, isExampleListing, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { DetailCompareButton } from './detail-compare-button';
 import { LocationSection } from './location-section';
@@ -16,7 +16,7 @@ export default function Detail({ item }: { item: Listing }) {
   const specs: [string, ReactNode][] = [
     ['소재 권역', item.district],
     ['온도대', <TempChip key="temp" value={item.temperature} />],
-    ['규모', item.area ? `${item.area.toLocaleString()}㎡ (${item.capacity})` : item.capacity],
+    ['규모', item.area ? `${item.area.toLocaleString()}㎡ (${capacityLabel(item)})` : item.capacity],
     ['비용', item.price],
     ['입주·수용 일정', item.available],
     ['제공 서비스', item.service],
@@ -33,6 +33,13 @@ export default function Detail({ item }: { item: Listing }) {
       </DemoNotice>
       <div className="detail-layout">
         <div>
+          {item.imageUrl ? (
+            <figure className="detail-photo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={item.imageUrl} alt={`${item.name} 외관 사진`} referrerPolicy="no-referrer" />
+              <figcaption>지음부동산 등록 사진 · 현재 상태는 현장 확인 시 다시 봅니다.</figcaption>
+            </figure>
+          ) : (
           <div className={warehouse ? `detail-banner temp-${temperatureTone(item.temperature)}` : 'detail-banner detail-banner-partner'}>
             <Icon size={70} strokeWidth={1} />
             <div>
@@ -43,6 +50,7 @@ export default function Detail({ item }: { item: Listing }) {
               <p>현장 사진은 실제 자료 확보 후 제공됩니다.</p>
             </div>
           </div>
+          )}
           <section className="panel">
             <SectionTitle title="기본 조건" />
             <dl className="spec-grid">

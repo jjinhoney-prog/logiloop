@@ -5,14 +5,14 @@ import { ArrowRight, Info, Plus, X } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
 import type { ReactNode } from 'react';
 import { DemoNotice, Empty, PageHeading, TempChip, TypeBadge } from '@/components/ui';
-import { listingHref } from '@/lib/data';
+import { capacityLabel, listingHref } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 
 const rows: [label: string, get: (item: Listing) => ReactNode][] = [
   ['유형', (i) => <TypeBadge type={i.type} />],
   ['지역', (i) => i.district],
   ['온도대', (i) => <TempChip value={i.temperature} />],
-  ['공간·처리 규모', (i) => <span className="num">{i.capacity}</span>],
+  ['공간·처리 규모', (i) => <span className="num">{capacityLabel(i)}</span>],
   ['서비스', (i) => i.service],
   ['비용 조건', (i) => i.price],
   ['일정', (i) => i.available],
