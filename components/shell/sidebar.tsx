@@ -33,7 +33,7 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       <div className="sidebar-bottom">
         <div className="region-note">
           <span className="live-dot" />
-          전국 어디든 검토 가능
+          부산·경남 우선 검토
           <p>희망 지역과 조건에 맞는 후보를 검토합니다.</p>
         </div>
         <Link className="side-secondary" href="/partnership" onClick={onNavigate}>

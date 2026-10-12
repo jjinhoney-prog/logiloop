@@ -15,7 +15,7 @@ const notoSansKr = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-noto-kr'
 
 export const metadata: Metadata = {
   title: { default: '로지루프 | 화주를 위한 창고·물류사 찾기', template: '%s | 로지루프' },
-  description: '지음부동산중개법인이 운영하는 로지루프. 화주의 조건을 정리하고 창고·물류사 후보와 운영방식을 비교합니다. 전국 어디든 검토 가능. 희망 지역과 조건에 맞는 창고·물류사 후보를 검토합니다.',
+  description: '지음부동산중개법인이 운영하는 로지루프. 화주의 조건을 정리하고 창고·물류사 후보와 운영방식을 비교합니다. 부산·경남 권역의 희망 지역과 조건에 맞는 창고·물류사 후보를 검토합니다.',
   robots: { index: false, follow: false },
 };
 

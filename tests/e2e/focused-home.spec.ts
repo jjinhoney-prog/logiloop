@@ -12,8 +12,9 @@ test('short home records one visit, request click, and carries attribution into 
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('지금 내는 창고·물류비,');
-  await expect(page.locator('.home-page > section')).toHaveCount(4);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('물류 조건만 남기세요.');
+  await expect(page.locator('.home-page > section')).toHaveCount(3);
+  await expect(page.locator('.problem-option')).toHaveCount(4);
   await expect(page.locator('.catalog-card')).toHaveCount(0);
   await expect.poll(() => events.filter((event) => event.event === 'home_visit').length).toBe(1);
   await page.reload();

@@ -7,9 +7,7 @@ test('rent review starts from home and passes current lease conditions for revie
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto('/');
-  await expect(page.locator('.home-choice')).toHaveCount(3);
-  await page.locator('summary').filter({ hasText: '지금 비용을 줄이고 싶어요' }).click();
-  await page.getByRole('link', { name: /지금 내는 창고 임차료를 줄이고 싶어요/ }).click();
+  await page.getByRole('link', { name: '지금 내는 창고 임차료 검토' }).click();
   await expect(page.getByRole('radio', { name: /지금 내는 창고 임차료를 줄이고 싶어요/ })).toBeChecked();
   await page.getByRole('button', { name: '기본 조건 입력' }).click();
   await page.getByLabel('현재 월 임차료 (만원/월)', { exact: true }).fill('1,000');

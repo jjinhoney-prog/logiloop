@@ -7,10 +7,9 @@ test('home situation carries into the request; unknown conditions can be submitt
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto('/');
-  await expect(page.locator('.home-choice')).toHaveCount(3);
-  await page.locator('summary').filter({ hasText: '새 창고·물류사가 필요해요' }).click();
+  await expect(page.locator('.problem-option')).toHaveCount(4);
   await expect(page.locator('.service-preview')).toContainText('가상 예시 · 실제 업체·견적 아님');
-  await page.getByRole('link', { name: /냉장·냉동 운영이 필요해요/ }).click();
+  await page.getByRole('link', { name: /저온 운영/ }).click();
   await expect(page.getByRole('radio', { name: /냉장·냉동 운영이 필요해요/ })).toBeChecked();
   await page.getByRole('button', { name: '기본 조건 입력' }).click();
   await page.locator('#company').fill('테스트 화주');

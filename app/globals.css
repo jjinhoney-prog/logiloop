@@ -1085,19 +1085,24 @@ footer a{display:flex;align-items:center;gap:5px}
 .home-focused .home-intro h1{font-size:clamp(32px,3.7vw,52px);line-height:1.4}
 .home-focused .home-intro h1>span{color:var(--teal);font-weight:800}
 .home-focused .home-intro p{max-width:650px}
-.home-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;margin-top:20px}
-.home-choice{border:1px solid var(--line);border-radius:14px;background:#fff;min-width:0}
-.home-choice summary,.home-choice-direct{padding:23px;cursor:pointer;list-style:none;position:relative}
-.home-choice summary::-webkit-details-marker{display:none}
-.home-choice strong{display:block;font-size:18px;padding-right:18px}
-.home-choice span{display:block;font-size:13px;color:var(--muted);margin-top:9px}
-.home-choice svg{position:absolute;right:18px;top:27px;color:var(--teal)}
-.home-choice[open]{border-color:var(--teal)}
-.home-choice[open] summary>svg{transform:rotate(180deg)}
-.choice-options{border-top:1px solid var(--line);padding:6px 18px}
-.choice-options a{position:relative;display:block;padding:14px 22px 14px 0;font-size:14px;color:var(--teal)}
-.choice-options a+a{border-top:1px solid var(--line)}
-.choice-options a svg{right:0;top:18px}
+.home-focused .home-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;max-width:none}
+.home-hero-copy p{font-size:16px}
+.home-focused .home-hero h1{font-size:clamp(30px,2.9vw,42px);word-break:keep-all}
+.problem-picker{word-break:keep-all}
+.problem-picker{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 8px 24px #17363e0d}
+.problem-picker h2{font-size:17px;margin:0 0 14px}
+.problem-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.problem-option{display:flex;flex-direction:column;gap:5px;min-width:0;padding:16px;border:1.5px solid var(--line);border-radius:12px;background:#f7f9f9;color:var(--ink);transition:border-color .15s,background-color .15s,transform .15s;touch-action:manipulation}
+.problem-option svg{color:var(--teal);margin-bottom:4px}
+.problem-option strong{font-size:16px}
+.problem-option span{font-size:13px;line-height:1.5;color:var(--muted)}
+.problem-option:hover{border-color:var(--navy);background:#fff}
+.problem-option:active{transform:scale(.99)}
+.problem-more{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.problem-more a{display:inline-flex;align-items:center;gap:6px;min-height:32px;font-size:13px;color:var(--teal);text-decoration:underline;text-underline-offset:4px}
+@media (max-width:1100px){.home-focused .home-hero{grid-template-columns:1fr;gap:28px}}
+@media (max-width:420px){.problem-options{grid-template-columns:1fr}.problem-picker{padding:16px}}
+@media (prefers-reduced-motion:reduce){.problem-option{transition:none}}
 .compact-preview{scroll-margin-top:30px}
 .compact-preview h2{margin-top:14px;font-size:22px}
 .preview-detail-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:13px}
@@ -1108,8 +1113,7 @@ footer a{display:flex;align-items:center;gap:5px}
 .inquiry-details>summary{padding:17px 20px;cursor:pointer;font-size:15px;font-weight:700}
 .inquiry-details>summary span{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
 .inquiry-details-body{padding:0 20px 20px}
-@media(max-width:1100px){.home-choices{grid-template-columns:1fr}.home-choice summary,.home-choice-direct{padding:20px}}
-@media(max-width:767px){.home-focused .home-intro{margin-top:0}.home-focused .home-intro h1{font-size:32px}.home-choice strong{font-size:17px}.home-final-request h2{font-size:20px}.compact-preview .preview-table{min-width:450px}.inquiry-details>summary span{display:block;margin:5px 0 0}.inquiry-details-body{padding:0 16px 16px}}
+@media(max-width:767px){.home-focused .home-intro{margin-top:0}.home-focused .home-intro h1{font-size:32px}.problem-option strong{font-size:16px}.home-final-request h2{font-size:20px}.compact-preview .preview-table{min-width:450px}.inquiry-details>summary span{display:block;margin:5px 0 0}.inquiry-details-body{padding:0 16px 16px}}
 @media(max-width:767px){
  .compact-preview .preview-table{min-width:0;table-layout:fixed;font-size:12px}
  .compact-preview .preview-table th,.compact-preview .preview-table td{padding:12px 8px;word-break:keep-all;overflow-wrap:anywhere}

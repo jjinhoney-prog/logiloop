@@ -33,7 +33,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {showDock && <ComparisonDock />}
         </main>
         <Footer />
-        {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">{pathname === '/' ? '내 조건 비교 요청하기' : '물류 요청하기'}<ArrowRight size={17} /></Link></div>}
+        {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">물류 요청하기<ArrowRight size={17} /></Link></div>}
       </div>
     </div>
   );
