@@ -11,7 +11,7 @@ import { Topbar } from './topbar';
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const showConsultation = !['/consultation', '/partnership', '/admin'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const showConsultation = !['/consultation', '/partnership', '/admin', '/compare'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
   // 상담·제휴 폼과 관리자 화면, 비교함 자체에서는 비교 바를 띄우지 않는다
   const showDock = showConsultation && pathname !== '/compare';
   const [open, setOpen] = useState(false);
@@ -33,7 +33,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           {showDock && <ComparisonDock />}
         </main>
         <Footer />
-        {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">상담 신청하기<ArrowRight size={17} /></Link></div>}
+        {showConsultation && !open && <div className="mobile-consultation"><Link className="button button-dark" href="/consultation">{pathname === '/' ? '내 조건 비교 요청하기' : '물류 요청하기'}<ArrowRight size={17} /></Link></div>}
       </div>
     </div>
   );

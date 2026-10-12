@@ -1,11 +1,14 @@
 import { inquiryTemperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from './data';
 import { COMPARE_LIMIT, validateInquiry } from './logic';
 import type { InquiryData, InquiryErrors, Listing, TierId } from './types';
+import { requestSituations } from './service-content';
+import { leaseReviewNote, rentReviewTitle, type LeaseReview } from './lease-review';
 
 /** 폼의 maxLength와 같은 값. 서버에서 다시 자른다. */
 export const FIELD_LIMITS = { company: 100, name: 100, phone: 20, item: 100, volume: 100, regionDetail: 150, note: 2000 } as const;
 
 export interface InquiryPayload extends InquiryData {
+  leaseReview?: LeaseReview;
   partnership: boolean;
   targets: string[];
   /** 허니팟. 사람에게는 보이지 않는 필드라 값이 있으면 자동 입력으로 본다. */
@@ -30,7 +33,7 @@ export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'n
   const tier = ([1, 2, 3] as const).find((t) => t === raw.tier) ?? (1 as TierId);
   const data: InquiryData = {
     tier,
-    help: partnership ? pick(raw.help, partnerTypes.map(([t]) => t), partnerTypes[0][0]) : '',
+    help: partnership ? pick(raw.help, partnerTypes.map(([t]) => t), partnerTypes[0][0]) : pick(raw.help, requestSituations.map((s) => s.title), ''),
     company: str(raw.company, FIELD_LIMITS.company),
     name: str(raw.name, FIELD_LIMITS.name),
     phone: str(raw.phone, FIELD_LIMITS.phone),
@@ -44,6 +47,9 @@ export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'n
     consent: raw.consent === true,
     source: pick(raw.source, sourceOptions, '기타'),
   };
+  if (!partnership && data.help === rentReviewTitle) {
+    data.note = leaseReviewNote(raw.leaseReview, data.note);
+  }
   const targets = Array.isArray(raw.targets) ? raw.targets.filter((id): id is string => typeof id === 'string') : [];
   const matched = [...new Set(targets)]
     .map((id) => catalog.find((item) => item.id === id))
@@ -93,6 +99,7 @@ export function emailRows({ data, targetNames }: NormalizedInquiry, receivedAt: 
     ['회사명', data.company],
     ['담당자', data.name],
     ['연락처', data.phone],
+    ['요청 상황', data.help || '조건 확인 후 협의'],
     ['품목', data.item || '미입력'],
     ['물량', data.volume],
     ['지역', regionLabel(data)],

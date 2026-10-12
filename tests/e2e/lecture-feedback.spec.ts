@@ -32,6 +32,7 @@ test('form dropdown selections survive step changes and are included in submissi
   });
   await page.goto('/consultation');
   await page.getByRole('button', { name: '기본 조건 입력' }).click();
+  await page.locator('.inquiry-details > summary').click();
   for (const [label, value] of [['희망 지역 · 전국 시·도', '부산'], ['필요 온도대', '냉장']]) {
     await page.getByRole('combobox', { name: label, exact: true }).click();
     await page.getByRole('option', { name: value, exact: true }).click();
@@ -43,11 +44,11 @@ test('form dropdown selections survive step changes and are included in submissi
   await page.locator('#phone').fill('01012345678');
   await page.locator('#item').fill('생활용품');
   await page.locator('#consent').check();
-  await page.getByRole('button', { name: '준비서 확인' }).click();
+  await page.getByRole('button', { name: '요청 내용 확인' }).click();
   await page.getByRole('button', { name: '수정', exact: true }).click();
   await expect(page.getByRole('combobox', { name: '희망 지역 · 전국 시·도' })).toContainText('부산');
-  await page.getByRole('button', { name: '준비서 확인' }).click();
-  await page.getByRole('button', { name: '상담 신청하기' }).click();
+  await page.getByRole('button', { name: '요청 내용 확인' }).click();
+  await page.getByRole('button', { name: '물류 요청하기' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(posted).toMatchObject({ region: '부산', temperature: '냉장' });
 });

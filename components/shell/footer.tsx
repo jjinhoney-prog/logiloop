@@ -12,7 +12,7 @@ export function Footer() {
         <Link href="/about">서비스·역할 안내</Link>
         <Link href="/privacy">개인정보 안내</Link>
         <Link href="/consultation">
-          상담 준비
+          물류 요청하기
           <ArrowRight size={14} />
         </Link>
       </div>

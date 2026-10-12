@@ -66,6 +66,20 @@ afterEach(() => {
 });
 
 describe('POST /api/inquiry', () => {
+  test('records conversion only after a real acceptance, excluding failures and honeypots', async () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const body = { ...valid, funnel: { visitId: '7d6fa736-20ac-49f5-a5e0-28589f99a001' } };
+    send.mockResolvedValueOnce({ error: { name: 'failed' } });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect((await POST(request(body))).status).toBe(502);
+    await POST(request({ ...body, website: 'bot' }));
+    expect(log).not.toHaveBeenCalled();
+    expect((await POST(request(body))).status).toBe(200);
+    expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({ event: 'request_submitted', visitId: body.funnel.visitId });
+    expect(log.mock.calls[0][0]).not.toContain(valid.phone);
+    log.mockRestore();
+  });
+
   test('valid consultation is sent once with subject and table body', async () => {
     const res = await POST(request(valid));
     expect(res.status).toBe(200);
@@ -77,6 +91,28 @@ describe('POST /api/inquiry', () => {
     expect(payload.subject).toBe('[로지루프 상담] 2등급 조건 비교 · 부산 · 생활용품');
     expect(payload.html).toContain('부산 신항권 상온 물류창고');
     expect(payload.text).toContain('연락처: 010-1234-5678');
+  });
+
+  test('selected shipper situation reaches the stored request and email', async () => {
+    store.dbOn = true;
+    await POST(request({ ...valid, help: '창고 공간이 필요해요', item: '미정' }));
+    expect(store.saveInquiry.mock.calls[0][0].data).toMatchObject({ help: '창고 공간이 필요해요', item: '미정' });
+    expect(send.mock.calls[0][0].text).toContain('요청 상황: 창고 공간이 필요해요');
+    expect(normalizeInquiry({ ...valid, help: '<invalid>' }, seedListings).value.data.help).toBe('');
+  });
+
+  test('lease review reaches storage and email with units and unknown costs intact', async () => {
+    store.dbOn = true;
+    const response = await POST(request({ ...valid, help: '지금 내는 창고 임차료를 줄이고 싶어요', leaseReview: { rent: '1,000', management: '0', area: '500평', vat: '임차료·관리비 모두 VAT 별도' }, note: '재계약 전 검토' }));
+    expect(response.status).toBe(200);
+    const note = store.saveInquiry.mock.calls[0][0].data.note;
+    expect(note).toContain('현재 월 임차료 (만원/월): 1,000');
+    expect(note).toContain('현재 월 관리비 (만원/월): 0');
+    expect(note).toContain('현재 보증금 (만원): 확인 필요');
+    expect(note).toContain('재계약 전 검토');
+    expect(send.mock.calls[0][0].text).toContain(note);
+    const ordinary = normalizeInquiry({ ...valid, leaseReview: { rent: '1,000' } }, seedListings);
+    expect(ordinary.value.data.note).toBe('');
   });
 
   test('partnership subject uses type, region and company', async () => {

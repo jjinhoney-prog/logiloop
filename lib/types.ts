@@ -130,7 +130,7 @@ export interface InquiryData {
   source: string;
 }
 
-export type InquiryErrors = Partial<Record<'name' | 'company' | 'phone' | 'item' | 'consent', string>>;
+export type InquiryErrors = Partial<Record<'name' | 'company' | 'phone' | 'item' | 'consent' | 'note', string>>;
 
 export interface ListingFilters {
   query?: string;

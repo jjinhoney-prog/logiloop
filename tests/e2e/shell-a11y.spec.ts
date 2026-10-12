@@ -10,7 +10,7 @@ test.describe('shell', () => {
     await expect(page.getByRole('link', { name: '물류사·3PL' })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('.breadcrumb strong')).toHaveText('물류사·3PL');
     await page.goto('/consultation');
-    await expect(page.locator('.breadcrumb strong')).toHaveText('상담 신청');
+    await expect(page.locator('.breadcrumb strong')).toHaveText('물류 요청');
     await page.goto('/privacy');
     await expect(page.locator('.breadcrumb strong')).toHaveText('이용 안내');
   });

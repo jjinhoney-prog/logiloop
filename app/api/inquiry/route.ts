@@ -3,6 +3,8 @@ import { saveInquiry, setMailStatus } from '@/lib/inquiries';
 import { buildEmailHtml, buildEmailText, buildSubject, isHoneypotFilled, normalizeInquiry, type NormalizedInquiry } from '@/lib/inquiry-email';
 import { getPublicSummaries } from '@/lib/listings';
 import { clientIp, inquiryLimiter } from '@/lib/rate-limit';
+import { funnelContext } from '@/lib/funnel';
+import { recordFunnelEvent } from '@/lib/funnel-server';
 import { isDbConfigured } from '@/lib/supabase';
 
 // Resend 테스트 모드 발신 주소. 도메인 인증 후 교체한다.
@@ -78,6 +80,12 @@ export async function POST(request: Request) {
     return json({ ok: false, error: '입력 내용을 확인해 주세요.', fields: errors as Record<string, string> }, 400);
   }
 
+  const attribution = !value.partnership ? funnelContext((body as Record<string, unknown>).funnel) : null;
+  const accepted = () => {
+    if (attribution) recordFunnelEvent('request_submitted', attribution.visitId, 'form');
+    return json({ ok: true });
+  };
+
   const receivedAt = new Date();
   let inquiryId: number | undefined;
   if (dbReady) {
@@ -91,13 +99,13 @@ export async function POST(request: Request) {
   if (!mailReady) {
     if (inquiryId === undefined) return json({ ok: false, error: '접수에 실패했습니다. 잠시 후 다시 시도해 주세요.' }, 502);
     await setMailStatus(inquiryId, 'skipped');
-    return json({ ok: true });
+    return accepted();
   }
 
   const sent = await sendMail(apiKey!, to!, value, receivedAt, inquiryId);
   if (inquiryId !== undefined) {
     await setMailStatus(inquiryId, sent ? 'sent' : 'failed');
-    return json({ ok: true });
+    return accepted();
   }
-  return sent ? json({ ok: true }) : json({ ok: false, error: SEND_FAILED }, 502);
+  return sent ? accepted() : json({ ok: false, error: SEND_FAILED }, 502);
 }

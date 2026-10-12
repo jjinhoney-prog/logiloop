@@ -20,7 +20,7 @@ export function Topbar() {
         </span>
         <Link className="button button-dark button-small" href="/consultation">
           <Plus size={16} />
-          상담 신청
+          {path === '/' ? '내 조건 비교 요청하기' : '물류 요청하기'}
         </Link>
       </div>
     </header>

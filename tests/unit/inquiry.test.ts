@@ -48,3 +48,12 @@ describe('parseConsultationParams', () => {
     expect(parseConsultationParams({ target: ['a', 'b'] }).targets).toEqual([]);
   });
 });
+
+// URL로 전달된 조건이 허용값을 벗어나거나 배열이어도 폼에 그대로 들어가지 않는다.
+describe('request context handoff', () => {
+  test('preserves valid context and bounds free text', async () => {
+    const { parseRequestContext } = await import('@/lib/search-params');
+    expect(parseRequestContext({ situation: 'space', region: '경남', temperature: '냉장', size: '1,000㎡ 이상', query: '도크' })).toMatchObject({ help: '창고 공간이 필요해요', tier: 1, region: '경남', temperature: '냉장', note: '목록 검색 조건: 도크\n희망 면적: 1,000㎡ 이상' });
+    expect(parseRequestContext({ situation: 'invalid', region: ['부산'], temperature: 'invalid', query: 'x'.repeat(300) })).toMatchObject({ help: '', region: '아직 모름', temperature: '아직 모름', note: `목록 검색 조건: ${'x'.repeat(100)}` });
+  });
+});

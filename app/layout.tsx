@@ -3,6 +3,7 @@ import { Manrope, Noto_Sans_KR } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import Shell from '@/components/shell/shell';
 import './globals.css';
+import { FunnelObserver } from '@/components/analytics/funnel-observer';
 
 // 빌드 시 내려받아 자체 호스팅한다. 방문자 브라우저는 Google Fonts에 요청하지 않는다.
 // adjustFontFallback 끔: 자동 생성되는 'Manrope Fallback'(Arial)이 ↔·→ 같은 기호를 가로채
@@ -13,8 +14,8 @@ const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', displa
 const notoSansKr = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-noto-kr', display: 'swap', preload: false });
 
 export const metadata: Metadata = {
-  title: { default: '로지루프 | 전국 물류거점 비교', template: '%s | 로지루프' },
-  description: '물류사 후보 연결부터 창고 직접 임차·3PL 위탁·혼합 운영 비교까지. 전국 물류거점 상담 플랫폼.',
+  title: { default: '로지루프 | 화주를 위한 창고·물류사 찾기', template: '%s | 로지루프' },
+  description: '지음부동산중개법인이 운영하는 로지루프. 화주의 조건을 정리하고 창고·물류사 후보와 운영방식을 비교합니다. 전국 어디든 검토 가능. 희망 지역과 조건에 맞는 창고·물류사 후보를 검토합니다.',
   robots: { index: false, follow: false },
 };
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html lang="ko" className={`${manrope.variable} ${notoSansKr.variable}`}>
       <body>
         <Providers>
+          <FunnelObserver />
           <Shell>{children}</Shell>
         </Providers>
       </body>

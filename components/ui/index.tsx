@@ -1,21 +1,22 @@
 import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Truck, Warehouse } from 'lucide-react';
 import { capacityLabel, isExampleListing, listingHref, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
 
-export function PageHeading({ eyebrow, title, description, children }: { eyebrow: string; title: string; description?: string; children?: ReactNode }) {
+export function PageHeading({ eyebrow, title, description, audience, children }: { eyebrow: string; title: string; description?: string; audience?: string; children?: ReactNode }) {
   return (
     <div className="page-heading">
       <div>
         <div className="eyebrow">{eyebrow}</div>
         <h1>{title}</h1>
+        {audience && <p className="page-audience">{audience}</p>}
         {description && <p>{description}</p>}
       </div>
-      {children}
+      {children && <div className="heading-actions">{children}</div>}
     </div>
   );
 }
@@ -99,15 +100,9 @@ export function CatalogCard({ item }: { item: Listing }) {
             <span key={tag}>{tag}</span>
           ))}
         </div>
-        <div className="card-meta">
-          <strong>{item.price}</strong>
-          <small>{item.available}</small>
-        </div>
+        <p className="card-service">{warehouse ? `입주 시점: ${item.available}` : item.service}</p>
         <div className="card-footer">
-          <span>
-            <Clock3 size={13} />
-            {item.status}
-          </span>
+          <strong className="card-price">{item.price}</strong>
           <CompareToggle id={item.id} />
         </div>
       </div>

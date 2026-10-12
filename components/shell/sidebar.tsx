@@ -33,8 +33,8 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       <div className="sidebar-bottom">
         <div className="region-note">
           <span className="live-dot" />
-          전국 물류 네트워크를 향해
-          <p>지역의 경계를 넘어, 조건 중심으로.</p>
+          전국 어디든 검토 가능
+          <p>희망 지역과 조건에 맞는 후보를 검토합니다.</p>
         </div>
         <Link className="side-secondary" href="/partnership" onClick={onNavigate}>
           <Handshake size={18} />
