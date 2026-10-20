@@ -72,4 +72,12 @@ describe('validateInquiry', () => {
     expect(validateInquiry({ ...valid, phone: '1012345678' }).phone).toBeDefined();
     expect(validateInquiry({ ...valid, phone: '010123456789' }).phone).toBeDefined();
   });
+
+  test('phone accepts 15xx·16xx·18xx representative numbers only at 8 digits', () => {
+    expect(validateInquiry({ ...valid, phone: '1666-0722' }).phone).toBeUndefined();
+    expect(validateInquiry({ ...valid, phone: '1588 1234' }).phone).toBeUndefined();
+    expect(validateInquiry({ ...valid, phone: '1800-1234' }).phone).toBeUndefined();
+    expect(validateInquiry({ ...valid, phone: '1700-1234' }).phone).toBeDefined();
+    expect(validateInquiry({ ...valid, phone: '1666-07220' }).phone).toBeDefined();
+  });
 });

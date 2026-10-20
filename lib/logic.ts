@@ -28,7 +28,8 @@ export function validateInquiry(data: Partial<InquiryData>, partnership = false)
   const errors: InquiryErrors = {};
   if (!data.name?.trim()) errors.name = '담당자 이름을 입력해 주세요.';
   if (!data.company?.trim()) errors.company = '회사명을 입력해 주세요.';
-  if (!/^0[0-9]{8,10}$/.test((data.phone || '').replace(/[\s-]/g, ''))) errors.phone = '연락 가능한 전화번호를 확인해 주세요.';
+  // 0으로 시작하는 유선·휴대 번호와 15xx·16xx·18xx 대표번호(8자리)를 받는다.
+  if (!/^(0[0-9]{8,10}|1[568][0-9]{6})$/.test((data.phone || '').replace(/[\s-]/g, ''))) errors.phone = '연락 가능한 전화번호를 확인해 주세요.';
   if (!partnership && !data.item?.trim()) errors.item = '취급 품목 또는 아직 모름을 입력해 주세요.';
   if (!data.consent) errors.consent = '개인정보 수집·이용 및 국외 이전에 동의해 주세요.';
   return errors;
