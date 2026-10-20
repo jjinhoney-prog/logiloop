@@ -7,10 +7,10 @@ test('home situation carries into the request; unknown conditions can be submitt
     return route.fulfill({ json: { ok: true } });
   });
   await page.goto('/');
-  await expect(page.locator('.problem-option')).toHaveCount(4);
+  await expect(page.locator('.problem-option')).toHaveCount(2);
   await expect(page.locator('.service-preview')).toContainText('가상 예시 · 실제 업체·견적 아님');
-  await page.getByRole('link', { name: /저온 운영/ }).click();
-  await expect(page.getByRole('radio', { name: /냉장·냉동 운영이 필요해요/ })).toBeChecked();
+  await page.getByRole('link', { name: /물류를 맡길 곳이 필요해요/ }).click();
+  await expect(page.getByRole('radio', { name: /물류를 처음 맡기려고 해요/ })).toBeChecked();
   await page.getByRole('button', { name: '기본 조건 입력' }).click();
   await page.locator('#company').fill('테스트 화주');
   await page.locator('#name').fill('테스트');
@@ -22,7 +22,7 @@ test('home situation carries into the request; unknown conditions can be submitt
   expect(posted).toBeUndefined();
   await page.getByRole('button', { name: '물류 요청하기' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  expect(posted).toMatchObject({ help: '냉장·냉동 운영이 필요해요', item: '미정', temperature: '아직 모름' });
+  expect(posted).toMatchObject({ help: '물류를 처음 맡기려고 해요', item: '미정', temperature: '아직 모름' });
 });
 
 test('catalog filters and partner services survive the request handoff', async ({ page }) => {

@@ -80,7 +80,7 @@ test('hero and mobile consultation links work without covering comparison contro
   const dock = await page.locator('.comparison-dock').boundingBox();
   const bar = await page.locator('.mobile-consultation').boundingBox();
   expect(dock!.y + dock!.height).toBeLessThanOrEqual(bar!.y);
-  await page.locator('.mobile-consultation a').click();
+  await page.locator('.mobile-consultation a[href="/consultation"]').click();
   await expect(page).toHaveURL(/\/consultation$/);
   await expect(page.locator('.mobile-consultation')).toHaveCount(0);
   await page.goto('/admin/login');

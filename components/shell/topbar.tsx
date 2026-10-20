@@ -8,19 +8,16 @@ import { currentLabel } from './nav';
 export function Topbar() {
   const path = usePathname();
   return (
-    <header className="topbar">
+    <header className="topbar topbar-sticky">
       <div className="breadcrumb">
         플랫폼<span>/</span>
         <strong>{currentLabel(path)}</strong>
       </div>
       <div className="topbar-right">
-        <span className="pilot-label">
-          <span />
-          프리뷰
-        </span>
-        <Link className="button button-dark button-small" href="/consultation">
+        {!path.startsWith('/admin') && <Link className="button button-lime button-small partner-register" href="/partnership">3PL 업체 등록</Link>}
+        <Link className="button button-dark button-small topbar-request" href="/consultation">
           <Plus size={16} />
-          물류 요청하기
+          물류사·창고 찾기 요청
         </Link>
       </div>
     </header>

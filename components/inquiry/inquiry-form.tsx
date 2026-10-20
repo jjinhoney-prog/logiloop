@@ -170,7 +170,7 @@ export default function InquiryForm({
         eyebrow={partnership ? 'GROW WITH LOGILOOP' : 'LET’S START WITH YOUR NEEDS'}
         title={partnership ? '시설과 서비스를 화주에게 연결하세요' : '필요한 물류 조건을 남겨주세요'}
         audience={partnership ? '물류사·3PL·창고주를 위한 파트너 참여' : '창고 확보·물류 위탁·운영방식을 검토하는 화주를 위해'}
-        description={partnership ? '시설·서비스를 확인하고 조건이 맞는 화주 요청과의 연결을 검토합니다.' : '회사명·담당자·연락처는 필수입니다. 품목·물량·지역·온도·시점은 미정으로 시작할 수 있습니다.'}
+        description={partnership ? '회사명·담당자·연락처부터 남겨주세요. 시설·서비스 정보는 담당자와 확인하고, 공개 범위를 협의한 뒤 조건이 맞는 화주 요청과의 연결을 검토합니다.' : '회사명·담당자·연락처는 필수입니다. 품목·물량·지역·온도·시점은 미정으로 시작할 수 있습니다.'}
       />
       {step === 1 && <div className="request-promises" aria-label="신청 전 안내">
         <div><strong>{partnership ? '참여 후 진행' : '받게 될 도움'}</strong><p>{partnership ? '정보 확인 → 공개 범위 협의 → 등록·화주 요청 검토' : '요구조건 요약 · 후보 검토 · 협의한 범위의 비교 자료'}</p></div>

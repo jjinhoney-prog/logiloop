@@ -33,12 +33,12 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       <div className="sidebar-bottom">
         <div className="region-note">
           <span className="live-dot" />
-          부산·경남 우선 검토
+          전국 물류사·창고 검토
           <p>희망 지역과 조건에 맞는 후보를 검토합니다.</p>
         </div>
-        <Link className="side-secondary" href="/partnership" onClick={onNavigate}>
+        <Link className="side-secondary sidebar-partner-register" href="/partnership" onClick={onNavigate}>
           <Handshake size={18} />
-          파트너 참여
+          3PL 업체 등록
           <ArrowUpRight size={16} />
         </Link>
         <Link className="side-secondary" href="/admin" onClick={onNavigate}>

@@ -1108,7 +1108,11 @@ footer a{display:flex;align-items:center;gap:5px}
 .preview-detail-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:13px}
 .home-final-request{padding:34px 24px;background:#edf3f0;border-radius:14px;text-align:center}
 .home-final-request h2{font-size:23px;margin-bottom:20px}
-.home-partner-link{display:block;width:fit-content;margin:20px auto 0;font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:4px}
+.home-supplier{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 28px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.home-supplier .eyebrow{display:block;margin-bottom:8px}
+.home-supplier h2{font-size:19px;margin-bottom:6px}
+.home-supplier p{font-size:14px;color:var(--muted);margin:0}
+@media(max-width:767px){.home-supplier{flex-direction:column;align-items:stretch;padding:22px 18px}.home-supplier h2{font-size:17px}.home-supplier .button{width:100%}}
 .inquiry-details{border:1px solid var(--line);border-radius:10px;margin:24px 0}
 .inquiry-details>summary{padding:17px 20px;cursor:pointer;font-size:15px;font-weight:700}
 .inquiry-details>summary span{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
@@ -1119,4 +1123,82 @@ footer a{display:flex;align-items:center;gap:5px}
  .compact-preview .preview-table th,.compact-preview .preview-table td{padding:12px 8px;word-break:keep-all;overflow-wrap:anywhere}
  .compact-preview .preview-table thead th:first-child{width:18%}
  .compact-preview .preview-table thead th:nth-child(2){width:42%}
+}
+
+/* 전국 매칭 홈 · 목적 → 결과물 → 담당 역할 */
+.home-focused h1,.home-focused h2,.home-focused h3{letter-spacing:-.035em;text-wrap:balance}
+.home-focused .problem-picker{box-shadow:none}
+.home-focused .problem-options{grid-template-columns:1fr}
+.home-focused .problem-option{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:12px;padding:18px 16px}
+.home-focused .problem-option svg{grid-row:1 / 3;margin:2px 0 0}
+.home-focused .problem-option span{grid-column:2}
+.home-focused .problem-more a{min-height:44px}
+.home-focused .home-request-note{font-size:13px;margin-top:14px}
+.home-results{margin:0 0 42px}
+.home-results>h2{margin-bottom:24px}
+.home-results .service-steps{margin:0}
+.home-comparison{min-width:0}
+.home-comparison h3{margin-bottom:14px}
+.home-comparison h3 span{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:4px}
+.home-comparison .preview-table{min-width:0;table-layout:fixed;font-size:13px}
+.home-comparison .preview-table th,.home-comparison .preview-table td{padding:14px 10px;overflow-wrap:anywhere;word-break:keep-all}
+.home-comparison .preview-table th:first-child{width:26%}
+.home-comparison>p,.home-preview-description{color:var(--muted);font-size:14px;line-height:1.8}
+.home-comparison>p{margin:14px 0 0}
+.home-trust{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:40px;padding:32px 0;border-block:1px solid var(--line);margin:42px 0}
+.home-trust h2{margin-bottom:12px}
+.home-trust p{font-size:14px;color:var(--muted);max-width:60ch;margin-bottom:8px}
+.home-roles{margin:0;align-self:center;font-size:13px}
+.home-roles>div{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}
+.home-roles>div:last-child{border-bottom:0}
+.home-roles dt{color:var(--muted)}
+.home-roles dd{margin:0;text-align:right;font-weight:700}
+.home-faq{margin:42px 0}
+.home-final-request p{font-size:14px;color:var(--muted);margin-bottom:22px}
+.home-focused .home-supplier{margin-top:42px}
+@media(max-width:1100px){.home-trust{grid-template-columns:1fr;gap:20px}}
+@media(max-width:767px){.home-results>h2,.home-focused .compact-preview h2{font-size:20px}.home-focused .home-hero h1{font-size:clamp(27px,7.5vw,32px)}.home-focused .home-hero{margin-bottom:36px}.home-focused .eyebrow{letter-spacing:0;font-size:11px}.home-focused .home-intro p{font-size:14px}.home-focused .home-request-note{font-size:12px}.home-comparison .preview-table thead th:first-child{width:26%}.home-comparison .preview-table thead th:nth-child(2){width:37%}.home-comparison .preview-table th,.home-comparison .preview-table td{padding:12px 8px}.home-trust{margin:32px 0;padding:24px 0}.home-final-request{padding:28px 18px}.home-final-request p{font-size:13px}}
+
+/* React 비교 탭 · 기존 팔레트와 키보드 탐색 유지 */
+.comparison-tabs{margin-top:24px}
+.comparison-tab-list{display:flex;gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px}
+.comparison-tab-list [role=tab]{min-height:46px;padding:10px 24px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-weight:700;background:var(--surface);color:var(--ink);transition:background-color .15s}
+.comparison-tab-list [role=tab]:hover{background:#edf3f0}
+.comparison-tab-list [role=tab][aria-selected=true]{background:var(--navy);color:var(--lime);border-color:var(--navy)}
+.comparison-tab-panel:focus-visible{outline:2px solid var(--teal);outline-offset:6px;border-radius:8px}
+.comparison-request{margin-top:18px}
+@media(max-width:767px){.comparison-tab-list [role=tab]{flex:1;padding:10px 16px}.comparison-request{width:100%}}
+@media(prefers-reduced-motion:reduce){.comparison-tab-list [role=tab]{transition:none}}
+
+/* 지속 노출되는 공급자 등록 · 기존 네이비/라임 유지 */
+.topbar-sticky{position:sticky;top:0;z-index:33}
+.topbar-right{gap:12px}
+.partner-register{border-color:#bed85c}
+.sidebar-partner-register{background:var(--lime);color:var(--navy);border-radius:8px;font-weight:700}
+.sidebar-partner-register:hover{background:#e3f7a0}
+.hero-partner-entry{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:24px;padding-top:18px;border-top:1px solid var(--line);font-size:13px}
+.hero-partner-entry>span{color:var(--muted)}
+.hero-partner-entry>a{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:700;text-decoration:underline;text-underline-offset:5px}
+.home-focused #home-title>span{position:relative;isolation:isolate}
+.home-focused #home-title>span::after{content:'';position:absolute;left:0;right:0;bottom:0;height:.19em;background:var(--lime);z-index:-1;transform-origin:left;animation:home-match-line 850ms cubic-bezier(.16,1,.3,1) both}
+.home-focused .problem-option{transition:border-color .18s,background-color .18s,transform .18s}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){.home-focused .problem-option:hover{transform:translateY(-3px);border-color:var(--teal);background:#f0f6ed}.hero-partner-entry>a:hover svg{transform:translateX(4px)}}
+.hero-partner-entry svg{transition:transform .18s}
+.comparison-tab-panel:not([hidden]){animation:home-panel-focus 220ms ease-out}
+.compact-preview{scroll-margin-top:105px}
+@keyframes home-match-line{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes home-panel-focus{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:767px){
+ .mobile-menu{position:fixed}
+ .topbar-request{display:none}
+ .mobile-consultation{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:8px;padding-inline:14px}
+ .mobile-consultation .button{padding:10px 8px;font-size:13px;gap:5px}
+ .topbar .partner-register{min-height:44px;padding-inline:14px}
+ .hero-partner-entry{gap:4px 12px;margin-top:18px;padding-top:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .home-focused #home-title>span::after,.comparison-tab-panel:not([hidden]){animation:none}
+ .home-focused .problem-option,.hero-partner-entry svg{transition:none}
+ .home-focused .problem-option:active{transform:none}
+ html{scroll-behavior:auto}
 }
