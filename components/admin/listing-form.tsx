@@ -8,6 +8,8 @@ import { listingTemperatures } from '@/lib/data';
 import type { ListingInput } from '@/lib/listing-form';
 import type { ListingType } from '@/lib/types';
 
+import { ListingPhoto } from './listing-controls';
+
 const checkLabels = ['공급자 입력', '서류 확인', '현장 확인', '화주 조건 수용 확인'];
 
 export function ListingForm({ initial }: { initial?: ListingInput }) {
@@ -50,6 +52,7 @@ export function ListingForm({ initial }: { initial?: ListingInput }) {
           {state.error}
         </p>
       )}
+      {editing && <div className="listing-edit-photo"><h2>대표 사진</h2><ListingPhoto key={initial?.imageUrl} name={initial!.name} imageUrl={initial?.imageUrl} /><p className="muted small">사진을 누르면 크게 볼 수 있습니다.</p></div>}
       <h2>기본 정보</h2>
       <div className="form-grid">
         {field('id', '매물 ID (URL)', input('id', { disabled: editing, placeholder: 'busan-02', maxLength: 48, autoComplete: 'off' }), editing ? '등록 후에는 바꿀 수 없습니다.' : '영문 소문자·숫자·하이픈. 공개 주소에 사용됩니다.')}

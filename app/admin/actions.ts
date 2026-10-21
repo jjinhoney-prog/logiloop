@@ -7,7 +7,8 @@ import { assertAdmin, endSession, isAuthConfigured, loginLimiter, startSession }
 import { inquiryStages } from '@/lib/data';
 import { updateInquiry } from '@/lib/inquiries';
 import { parseListingForm, type ListingFormErrors } from '@/lib/listing-form';
-import { insertListing, setListingVisibility, updateListing } from '@/lib/listings';
+import { deleteListing, insertListing, setListingVisibility, updateListing } from '@/lib/listings';
+import { LISTING_ID_PATTERN } from '@/lib/logic';
 import { clientIp } from '@/lib/rate-limit';
 import { checkPassword } from '@/lib/session';
 import { isDbConfigured } from '@/lib/supabase';
@@ -52,6 +53,21 @@ export async function saveListing(_prev: ListingFormState, form: FormData): Prom
 }
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+
+export async function removeListing(id: string): Promise<ActionResult> {
+  await assertAdmin();
+  if (typeof id !== 'string' || !LISTING_ID_PATTERN.test(id)) return { ok: false, error: '올바른 매물 ID가 아닙니다.' };
+  if (!isDbConfigured()) return { ok: false, error: 'DB 연결 전에는 매물을 삭제할 수 없습니다.' };
+  try {
+    const result = await deleteListing(id);
+    if (result === 'linked') return { ok: false, error: '상담 이력이 연결된 매물은 삭제할 수 없습니다. 비공개 또는 보관 처리해 주세요.' };
+    if (result === 'missing') return { ok: false, error: '이미 삭제되었거나 매물을 찾을 수 없습니다.' };
+  } catch {
+    return { ok: false, error: '매물 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.' };
+  }
+  for (const path of ['/admin', '/warehouses', '/partners', '/compare', `/warehouses/${id}`, `/partners/${id}`, `/admin/listings/${id}`]) revalidatePath(path);
+  return { ok: true };
+}
 
 const visibilities: Visibility[] = ['hidden', 'published', 'archived'];
 

@@ -210,3 +210,12 @@ export async function setListingVisibility(id: string, visibility: Visibility): 
   if (error) fail('상태 변경', error);
   return data.length > 0;
 }
+
+/** FK RESTRICT protects inquiry history, including links created during deletion. */
+export async function deleteListing(id: string): Promise<'deleted' | 'linked' | 'missing'> {
+  if (!LISTING_ID_PATTERN.test(id)) return 'missing';
+  const { data, error } = await db().from('listings').delete().eq('id', id).select('id');
+  if (error?.code === '23503') return 'linked';
+  if (error) fail('삭제', error);
+  return data.length ? 'deleted' : 'missing';
+}

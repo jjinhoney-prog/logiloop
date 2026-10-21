@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Archive, ArrowUpRight, ClipboardList, Eye, EyeOff, Filter, LogOut, MailWarning, Pencil, Plus, RotateCcw, Save, Warehouse, X } from 'lucide-react';
 import { changeListingVisibility, logout, saveInquiryProgress, type ActionResult } from '@/app/admin/actions';
+import { DeleteListingButton, ListingPhoto } from './listing-controls';
 import { useToast } from '@/components/providers/toast';
 import { DemoNotice, Empty, PageHeading } from '@/components/ui';
 import { inquiryStages, listingHref, tiers, visibilityLabels } from '@/lib/data';
@@ -220,12 +221,13 @@ function ListingTable({ listings }: { listings: AdminListing[] }) {
     <>
       <div className="admin-table-top">
         <h2>매물 목록</h2>
-        <span className="muted small">신규 등록은 비공개 · 삭제 대신 보관</span>
+        <span className="muted small">사진을 누르면 확대 · 상담 연결 매물은 삭제 대신 보관</span>
       </div>
       <div className="table-scroll">
         <table className="data-table">
           <thead>
             <tr>
+              <th>사진</th>
               <th>매물</th>
               <th>유형</th>
               <th>노출</th>
@@ -237,6 +239,7 @@ function ListingTable({ listings }: { listings: AdminListing[] }) {
           <tbody>
             {listings.map((item) => (
               <tr key={item.id}>
+                <td><ListingPhoto key={item.imageUrl} name={item.name} imageUrl={item.imageUrl} /></td>
                 <td>
                   <strong>{item.name}</strong>
                   <small>
@@ -283,6 +286,7 @@ function ListingTable({ listings }: { listings: AdminListing[] }) {
                       복원
                     </button>
                   )}
+                  <DeleteListingButton id={item.id} name={item.name} inquiryCount={item.inquiryCount} disabled={pending} />
                 </td>
               </tr>
             ))}

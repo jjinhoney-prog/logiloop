@@ -99,6 +99,7 @@ npm run dev                  # http://localhost:3000
 
 ```bash
 npm run check   # lint → typecheck → 단위 테스트(Vitest) → build
+npm run e2e:admin # 가상 DB로 사진 확대·삭제·상담 이력 보호 검증 (운영 DB 미접속)
 npm run e2e     # Playwright E2E + axe 접근성 (처음 한 번: npx playwright install chromium)
 ```
 
@@ -153,7 +154,7 @@ DB 키가 없으면 공개 화면은 예시 7건으로, 상담은 메일 전달�
 ## 저장 방식과 한계
 
 - 상담 신청은 Supabase에 저장하고 담당자 메일로도 전달합니다. 종결 후 1년이 지난 기록은 월 1회 수동 파기합니다([docs/db-design.md §7](docs/db-design.md)).
-- 매물 삭제 기능은 없습니다. 상담 이력을 보존하기 위해 ‘보관’으로 처리합니다.
+- 매물 관리에서 대표 사진을 확대하고 매물을 영구 삭제할 수 있습니다. 상담이 연결된 매물은 DB 외래키로 삭제를 차단하며 ‘보관’을 사용합니다. 삭제해도 원본 사진 파일은 유지됩니다.
 - 관리자 계정은 1개(비밀번호 방식)입니다. 담당자별 계정·권한 구분은 없습니다.
 - 비교함은 매물 ID만 브라우저 `localStorage`(`logiloop:compare`)에 저장하고, 공개 목록에 없는 ID는 자동으로 뺍니다.
 - 거리 계산 결과는 CDN에 최대 1일 캐시됩니다. 매물을 비공개로 바꿔도 캐시된 거리 응답은 그동안 남을 수 있습니다(권역 대표 좌표 기준 값).
