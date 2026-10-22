@@ -14,7 +14,7 @@ export function Topbar() {
         <strong>{currentLabel(path)}</strong>
       </div>
       <div className="topbar-right">
-        {!path.startsWith('/admin') && <Link className="button button-lime button-small partner-register" href="/partnership">3PL 업체 등록</Link>}
+        {!path.startsWith('/admin') && <Link className="button button-yellow button-small partner-register" href="/partnership">3PL 업체 등록</Link>}
         <Link className="button button-dark button-small topbar-request" href="/consultation">
           <Plus size={16} />
           물류사·창고 찾기 요청

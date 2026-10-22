@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowUpRight, Handshake, Settings2 } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
+import { LOGO_TONE, Logo } from './logo';
 import { isActive, navigation } from './nav';
 
 export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
@@ -12,10 +13,8 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <Link className="brand" href="/" onClick={onNavigate}>
-        <span className="brand-icon">↔</span>
-        <div>
-          logiloop<span>로지루프 by 지음</span>
-        </div>
+        <Logo tone={LOGO_TONE.black} />
+        <span className="brand-sub">로지루프 by 지음</span>
       </Link>
       <div className="nav-label">YOUR NEXT LOGISTICS</div>
       <nav aria-label="주 메뉴">

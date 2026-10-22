@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Manrope, Noto_Sans_KR } from 'next/font/google';
+import { Manrope, Montserrat, Noto_Sans_KR } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import Shell from '@/components/shell/shell';
 import './globals.css';
@@ -11,6 +11,8 @@ import { FunnelObserver } from '@/components/analytics/funnel-observer';
 // 주의: 16.3.7 기준 webpack 빌드에서만 적용되고 Turbopack 빌드는 이 옵션을 무시한다(화살표 기호만 Arial 모양).
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap', adjustFontFallback: false });
 // 한글 글리프는 unicode-range 조각으로 필요한 만큼만 로드된다(한글 subset 프리로드 없음).
+// 로고 워드마크 전용(CI 가이드 v2: Montserrat ExtraBold).
+const montserrat = Montserrat({ subsets: ['latin'], weight: '800', variable: '--font-montserrat', display: 'swap', preload: false });
 const notoSansKr = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-noto-kr', display: 'swap', preload: false });
 
 export const metadata: Metadata = {
@@ -24,7 +26,7 @@ export const viewport: Viewport = { colorScheme: 'only light' };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="ko" className={`${manrope.variable} ${notoSansKr.variable}`}>
+    <html lang="ko" className={`${manrope.variable} ${montserrat.variable} ${notoSansKr.variable}`}>
       <body>
         <Providers>
           <FunnelObserver />

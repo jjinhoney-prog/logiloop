@@ -38,8 +38,8 @@ export function HomeMotion({ children }: { children: ReactNode }) {
             // The numbered sequence traces conditions → candidates → comparison.
             entry.target.querySelectorAll('li').forEach((step, index) => {
               animations.push(step.animate([
-                { opacity: 0.45, transform: 'translateY(14px)', borderTopColor: '#d7f275' },
-                { opacity: 1, transform: 'translateY(0)', borderTopColor: '#257f75' },
+                { opacity: 0.45, transform: 'translateY(14px)', borderTopColor: '#fff3c4' },
+                { opacity: 1, transform: 'translateY(0)', borderTopColor: '#ffd53d' },
               ], { duration: 500, delay: index * 110, easing }));
             });
             observer?.unobserve(entry.target);

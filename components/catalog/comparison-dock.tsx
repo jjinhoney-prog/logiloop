@@ -16,7 +16,7 @@ export function ComparisonDock() {
         <b>{selected.length}</b>개 후보를 담았습니다
         <small>{full ? '최대 3개 · 가득 참' : `${COMPARE_LIMIT - selected.length}개 더 담을 수 있음`}</small>
       </span>
-      <Link className="button button-lime" href="/compare">
+      <Link className="button button-yellow" href="/compare">
         비교함 보기
         <ArrowRight size={16} />
       </Link>

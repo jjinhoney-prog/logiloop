@@ -23,7 +23,7 @@ export default function Page() {
             <br />
             운영방식을 고르기 전 확인할 항목을 살펴보세요.
           </p>
-          <Link className="button button-lime" href="/insights/lease-or-3pl">
+          <Link className="button button-yellow" href="/insights/lease-or-3pl">
             운영방식 가이드 읽기
             <ArrowRight size={17} />
           </Link>

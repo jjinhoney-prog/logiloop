@@ -87,7 +87,7 @@ export default function Home() {
           <h2 id="supplier-title">물류사·창고주이신가요?</h2>
           <p>시설과 서비스를 등록하고 조건이 맞는 화주 요청을 받아보세요. 전국 파트너의 참여를 받으며, 공개 범위는 등록 전에 협의합니다.</p>
         </div>
-        <Link className="button button-lime" href="/partnership">3PL·창고 파트너 등록<ArrowRight size={17} /></Link>
+        <Link className="button button-yellow" href="/partnership">3PL·창고 파트너 등록<ArrowRight size={17} /></Link>
       </section>
     </div></HomeMotion>
   );
