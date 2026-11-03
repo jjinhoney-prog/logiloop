@@ -18,7 +18,12 @@ const notoSansKr = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-noto-kr'
 export const metadata: Metadata = {
   title: { default: '로지루프 | 화주를 위한 창고·물류사 찾기', template: '%s | 로지루프' },
   description: '지음부동산중개법인이 운영하는 로지루프. 화주의 조건을 정리하고 창고·물류사 후보와 운영방식을 비교합니다. 전국 희망 지역과 조건에 맞는 창고·물류사 후보를 검토합니다.',
-  robots: { index: false, follow: false },
+  verification: {
+    google: '4JFGzIl9oNBnamaRJiefh2fta3OPByFFKlsXzUGVCTI',
+    other: { 'naver-site-verification': 'b5e2ccc2983eacf2d9255fa57fc16604676a1ff1' },
+  },
+  metadataBase: new URL('https://logiloop.co.kr'),
+  robots: { index: true, follow: true },
 };
 
 // 다크모드 기기에서도 밝은 화면으로 렌더링한다(globals.css의 color-scheme과 같은 값).

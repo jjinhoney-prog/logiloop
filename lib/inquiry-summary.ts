@@ -1,3 +1,5 @@
+import { shipperLeadRows, shipperQuoteRows } from './shipper-quote';
+import { formatInquiryVolume } from './inquiry-volume';
 import { tiers } from './data';
 import type { InquiryData, Listing } from './types';
 
@@ -13,11 +15,12 @@ export function inquirySummary(data: InquiryData, targetItems: Pick<Listing, 'na
     `연락처: ${data.phone}`,
     help,
     `품목: ${data.item || '미입력'}`,
-    `${partnership ? '보관·처리 규모' : '대략적 물량'}: ${data.volume}`,
+    `${partnership ? '보관·처리 규모' : '대략적 물량'}: ${formatInquiryVolume(data)}`,
     `지역: ${data.region}${data.regionDetail ? ' · ' + data.regionDetail : ''}`,
     `${partnership ? '수용 가능 시점' : '희망 시점'}: ${data.timing}`,
     `온도: ${data.temperature}`,
     `검토 후보: ${targetItems.map((i) => i.name).join(', ') || '미정'}`,
+    ...(data.shipperQuote ? [...shipperQuoteRows(data.shipperQuote), ...shipperLeadRows(data.shipperQuote)].map(([label,value])=>`${label}: ${value}`) : []),
     `추가 요청: ${data.note || '없음'}`,
     `유입경로: ${data.source}`,
     '',

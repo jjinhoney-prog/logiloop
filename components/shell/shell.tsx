@@ -11,7 +11,7 @@ import { Topbar } from './topbar';
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const showConsultation = !['/consultation', '/partnership', '/admin', '/compare'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const showConsultation = !['/consultation', '/partnership', '/admin', '/compare', '/quote', '/agreements', '/requests/approve'].some((path) => pathname === path || pathname.startsWith(`${path}/`));
   // 상담·제휴 폼과 관리자 화면, 비교함 자체에서는 비교 바를 띄우지 않는다
   const showDock = showConsultation && pathname !== '/compare';
   const [open, setOpen] = useState(false);

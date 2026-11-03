@@ -21,7 +21,7 @@ export default function Home() {
       <section className="home-intro home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
           <div className="eyebrow"><span className="accent-line" />전국 물류사·창고 매칭 · 로지루프 by 지음</div>
-          <h1 id="home-title">우리 회사에 맞는<br /><span>물류사와 창고를 찾으세요.</span></h1>
+          <h1 id="home-title">로지루프에서 우리 회사에 맞는<br /><span>물류사와 창고를 찾으세요.</span></h1>
           <p>물류를 맡길 운영사가 필요한가요, 직접 사용할 창고가 필요한가요? 로지루프 담당자가 조건을 정리하고, 후보별 비용과 운영 조건을 비교해 드립니다.</p>
           <div className="hero-actions">
             <Link className="button button-dark hero-consultation" data-funnel-placement="hero" href="/consultation">물류사·창고 찾기 요청<ArrowRight size={17} /></Link>

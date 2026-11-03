@@ -1,0 +1,2 @@
+import type {Publication} from '@/lib/public-requests';
+export default function RequestSummary({value:p}:{value:Publication}){return <><h2>{p.title}</h2><dl className="spec-grid">{[['희망 권역',p.region],['품목',p.category],['온도',p.temperature],['필요 업무',p.services.join(' · ')],['평균 보관량',p.storage],['월 출고량',p.outbound],['시작 희망',p.start],['모집 마감',p.deadline]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><p className="request-summary">{p.summary}</p></>;}

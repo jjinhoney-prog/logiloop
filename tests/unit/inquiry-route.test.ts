@@ -264,3 +264,27 @@ describe('inquiry email helpers', () => {
     expect(buildEmailHtml(value, new Date('2026-09-29T15:00:00Z'))).toContain('2026. 09. 30. 00:00 (KST)');
   });
 });
+
+
+test('split quantities reach persistence and email with units, preserving zero', async () => {
+  store.dbOn = true;
+  const res = await POST(request({ ...valid, storageQuantity: '0', storageUnit: '팔레트', outboundQuantity: '1200', outboundUnit: '박스' }));
+  expect(res.status).toBe(200);
+  const volume = '보관 규모: 0 팔레트 / 월 출고량: 1200 박스';
+  expect(store.saveInquiry.mock.calls[0][0].data.volume).toBe(volume);
+  expect(send.mock.calls[0][0].text).toContain(volume);
+});
+
+test.each([null, {}, -5, '-1', '1e5', '1234567890', '1.234'])('rejects malformed volume %j before sending or storing', async (storageQuantity) => {
+  store.dbOn = true;
+  const res = await POST(request({ ...valid, storageQuantity, storageUnit: '팔레트' }));
+  expect(res.status).toBe(400);
+  expect(store.saveInquiry).not.toHaveBeenCalled();
+  expect(send).not.toHaveBeenCalled();
+});
+
+test('empty quantities are unknown; forged units are rejected', () => {
+  expect(normalizeInquiry({ ...valid, storageQuantity: '', outboundQuantity: '' }, []).value.data.volume).toBe('보관 규모: 미정 / 월 출고량: 미정');
+  expect(normalizeInquiry({ ...valid, storageQuantity: '5', storageUnit: '<script>' }, []).errors.storageQuantity).toBeTruthy();
+  expect(normalizeInquiry(valid, []).value.data.volume).toBe('100PLT');
+});

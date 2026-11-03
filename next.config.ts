@@ -8,6 +8,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Keep the live demo independent of development and test rebuilds.
+  distDir: process.env.LOGILOOP_MARKETPLACE_DEMO === '1' ? '.next-marketplace' : '.next',
   poweredByHeader: false,
   typedRoutes: true,
   async headers() {

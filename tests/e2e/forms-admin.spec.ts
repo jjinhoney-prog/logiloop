@@ -1,3 +1,4 @@
+import { fillPartner } from './partner-helper';
 import { expect, test, type Page } from '@playwright/test';
 
 test.describe('consultation form', () => {
@@ -107,19 +108,15 @@ test.describe('consultation form', () => {
     await expect(page.getByRole('button', { name: '물류 요청하기' })).toBeEnabled();
   });
 
-  test('partnership does not require item and names the file accordingly', async ({ page }) => {
+  test('partnership registers without facility details and downloads the private receipt', async ({ page }) => {
+    await page.route('**/api/partnership', route => route.fulfill({ status: 201, json: { ok: true, id: 42, token: 'a'.repeat(64) } }));
     await page.goto('/partnership');
-    await page.getByRole('radio', { name: /창고·물류센터 임대 홍보/ }).check();
-    await page.getByRole('button', { name: '기본 조건 입력' }).click();
-    await page.locator('#company').fill('예시 창고');
-    await page.locator('#name').fill('테스트');
-    await page.locator('#phone').fill('0511234567');
-    await page.locator('#consent').check();
-    await page.getByRole('button', { name: '요청 내용 확인' }).click();
-    await expect(page.locator('.prepared-panel pre')).toContainText('참여 유형: 창고·물류센터 임대 홍보');
-    await expect(page.getByRole('button', { name: '파트너 신청하기' })).toBeVisible();
-    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '준비서 다운로드' }).click()]);
-    expect(download.suggestedFilename()).toBe('로지루프_파트너_준비서.txt');
+    await fillPartner(page);
+    await page.getByRole('button', { name: '3PL 업체 등록 신청' }).click();
+    await expect(page.getByRole('heading', { name: '업체 등록이 접수되었습니다.' })).toBeVisible();
+    await expect(page.getByLabel('업체 정보 보완 링크')).toHaveValue(/partnership\/manage#42\./);
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: '접수내역 저장' }).click()]);
+    expect(download.suggestedFilename()).toBe('로지루프_업체등록_접수내역.txt');
   });
 });
 
@@ -148,4 +145,11 @@ test.describe('admin workspace', () => {
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
+});
+
+test('warehouse suppliers retain their separate participation form', async ({ page }) => {
+  await page.goto('/partnership');
+  await page.getByRole('link', { name: '창고·물류센터 임대 등록', exact: true }).click();
+  await expect(page).toHaveURL(/\/partnership\/warehouse$/);
+  await expect(page.getByRole('radio', { name: /창고·물류센터 임대 홍보/ })).toBeChecked();
 });

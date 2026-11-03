@@ -13,7 +13,9 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "e2e:admin": "playwright test --config playwright.admin.config.ts",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "demo:quotes": "node scripts/demo-quotes.mjs",
+    "demo:marketplace": "node scripts/demo-marketplace.mjs"
   },
   "engines": {
     "node": ">=20.19.0"

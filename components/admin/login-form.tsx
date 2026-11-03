@@ -4,14 +4,15 @@ import { useActionState } from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { login, type LoginState } from '@/app/admin/actions';
 
-export function LoginForm({ configured }: { configured: boolean }) {
+export function LoginForm({ configured, quoteDestination = false }: { configured: boolean; quoteDestination?: boolean }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, undefined);
   return (
     <form className="panel admin-login" action={action}>
+      {quoteDestination && <input type="hidden" name="next" value="quotes" />}
       <span className="prepared-icon">
         <LockKeyhole size={28} />
       </span>
-      <h2>관리자 로그인</h2>
+      <h2>{quoteDestination ? '견적 관리 로그인' : '관리자 로그인'}</h2>
       {!configured && <p className="field-error">관리자 비밀번호가 아직 설정되지 않았습니다. 환경변수 ADMIN_PASSWORD와 SESSION_SECRET을 등록해 주세요.</p>}
       <label className="form-field">
         <span>비밀번호</span>

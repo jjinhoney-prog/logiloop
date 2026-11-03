@@ -1,3 +1,6 @@
+import { normalizeOperatingRegions } from './partner-regions';
+import { normalizePublicPartner } from './public-partner';
+import { validPartnerLogo, MAX_LOGO_DATA_LENGTH } from './partner-brand';
 import { listingTemperatures, SOURCE_URL_PATTERN } from './data';
 import { LISTING_ID_PATTERN } from './logic';
 import type { Listing, ListingType, VerificationChecks } from './types';
@@ -39,6 +42,7 @@ export function parseListingForm(form: FormData, { requireId }: { requireId: boo
   const value: ListingInput = {
     id,
     type,
+    imageUrl: type === 'partner' ? text(form, 'imageUrl', MAX_LOGO_DATA_LENGTH) || undefined : undefined,
     name: text(form, 'name', LIMITS.name),
     region: text(form, 'region', LIMITS.region),
     province: text(form, 'province', LIMITS.province) || undefined,
@@ -62,6 +66,15 @@ export function parseListingForm(form: FormData, { requireId }: { requireId: boo
     sortOrder: Number.isInteger(sortOrder) ? Math.min(Math.max(sortOrder, 0), 9999) : 100,
   };
 
+  if (type === 'partner') {
+    try { const raw = form.get('publicPartner'); value.publicPartner = normalizePublicPartner(raw ? JSON.parse(String(raw)) : {}); }
+    catch (err) { errors.publicPartner = err instanceof Error ? err.message : '공개 조건을 확인하세요.'; }
+  }
+  if (type === 'partner') {
+    try { const raw=form.get('operatingRegions'); value.operatingRegions=normalizeOperatingRegions(raw?JSON.parse(String(raw)):[]); }
+    catch(err) { errors.operatingRegions=err instanceof Error?err.message:'공개 운영 지역을 확인하세요.'; }
+  }
+  if (type === 'partner' && !validPartnerLogo(String(form.get('imageUrl') ?? ''))) errors.imageUrl = '로고 이미지 형식을 확인하세요.';
   if (requireId && !LISTING_ID_PATTERN.test(id)) errors.id = '영문 소문자·숫자·하이픈 2~48자로 입력해 주세요. 예: busan-02';
   if (!value.name) errors.name = '매물명을 입력해 주세요.';
   if (!value.region) errors.region = '지역을 입력해 주세요.';

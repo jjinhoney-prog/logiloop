@@ -1,4 +1,6 @@
+import { decodeShipperQuote, encodeShipperQuote, SHIPPER_QUOTE_TITLE } from './shipper-quote';
 import 'server-only';
+import { redactPartnerNote } from './partner-document';
 import type { NormalizedInquiry } from './inquiry-email';
 import { db } from './supabase';
 import type { InquiryRecord, InquiryStage, MailStatus, TierId } from './types';
@@ -44,7 +46,7 @@ export async function saveInquiry({ data, partnership, targetIds }: NormalizedIn
       region_detail: data.regionDetail,
       timing: data.timing,
       temperature: data.temperature,
-      note: data.note,
+      note: data.shipperQuote ? encodeShipperQuote(data.shipperQuote, data.note) : data.note,
       source: data.source,
       consent_at: receivedAt.toISOString(),
       created_at: receivedAt.toISOString(),
@@ -98,7 +100,8 @@ export async function getInquiries(limit = 200): Promise<InquiryRecord[]> {
     regionDetail: row.region_detail,
     timing: row.timing,
     temperature: row.temperature,
-    note: row.note,
+    ...(row.kind === 'partnership' && row.source === '3PL 간편 등록' ? redactPartnerNote(row.note) : { note: row.note }),
+    ...(row.kind === 'consultation' && row.help === SHIPPER_QUOTE_TITLE && decodeShipperQuote(row.note) ? { shipperQuote: decodeShipperQuote(row.note)!.requirements, note: decodeShipperQuote(row.note)!.note } : {}),
     source: row.source,
     stage: row.stage,
     owner: row.owner,

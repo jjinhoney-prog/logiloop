@@ -32,8 +32,8 @@ export async function isAdmin() {
 }
 
 /** 관리자 페이지 렌더링 전에 호출. 로그인하지 않았으면 로그인 화면으로 보낸다. */
-export async function requireAdmin() {
-  if (!(await isAdmin())) redirect('/admin/login');
+export async function requireAdmin(destination: '/admin' | '/admin/quotes' = '/admin') {
+  if (!(await isAdmin())) redirect(destination === '/admin/quotes' ? '/admin/login?next=quotes' : '/admin/login');
 }
 
 /** 모든 관리자 Server Action의 첫 줄에서 호출. Server Action은 화면 없이도 직접 POST할 수 있다. */

@@ -1,0 +1,7 @@
+import {expect,test} from 'vitest';
+import {normalizeExternalAgreement} from '@/lib/external-agreement';
+const input={documentUrl:'https://app.modusign.co.kr/documents/test',status:'서명 요청',evidenceUrl:'',note:'계약 당사자와 원본 확인',confirmed:true};
+test('records manual status and appends audit history',()=>{const first=normalizeExternalAgreement(input);const next=normalizeExternalAgreement({...input,status:'일부 서명'},first);expect(next.provider).toBe('modusign');expect(next.history).toHaveLength(2);});
+test('rejects spoofed origin, credentials and unconfirmed state',()=>{for(const documentUrl of ['https://app.modusign.co.kr.evil.com/doc','javascript:alert(1)','https://user@app.modusign.co.kr/doc'])expect(()=>normalizeExternalAgreement({...input,documentUrl})).toThrow();expect(()=>normalizeExternalAgreement({...input,confirmed:false})).toThrow();});
+test('completion requires evidence and terminal records cannot be overwritten',()=>{expect(()=>normalizeExternalAgreement({...input,status:'완료'})).toThrow();const done=normalizeExternalAgreement({...input,status:'완료',evidenceUrl:'https://drive.google.com/folder/test'});expect(()=>normalizeExternalAgreement(input,done)).toThrow();});
+test('linked document and progress cannot be replaced or reversed',()=>{const p=normalizeExternalAgreement({...input,status:'일부 서명'});expect(()=>normalizeExternalAgreement(input,p)).toThrow();expect(()=>normalizeExternalAgreement({...input,documentUrl:'https://app.modusign.co.kr/documents/other'},p)).toThrow();});

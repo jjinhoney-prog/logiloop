@@ -1,4 +1,6 @@
+import { normalizeOperatingRegions } from './partner-regions';
 import 'server-only';
+import { normalizePublicPartner } from './public-partner';
 import type { ListingInput } from './listing-form';
 import { LISTING_ID_PATTERN } from './logic';
 import { seedListings } from './seed-listings';
@@ -6,9 +8,10 @@ import { db, isDbConfigured } from './supabase';
 import type { AdminListing, Listing, ListingSummary, ListingType, VerificationChecks, Visibility } from './types';
 
 const COLUMNS =
-  'id,type,visibility,name,region,province,district,temperature,area,capacity,price,available,status_note,tags,height,power,service,suitability,limitation,checks,lat,lng,sort_order,updated_at,source_url,image_url';
+  'id,type,visibility,name,region,province,district,temperature,area,capacity,price,available,status_note,tags,height,power,service,suitability,limitation,checks,lat,lng,sort_order,updated_at,source_url,image_url,operating_regions,public_partner';
 
 interface ListingRow {
+  operating_regions?: unknown;
   id: string;
   type: ListingType;
   visibility: Visibility;
@@ -35,12 +38,16 @@ interface ListingRow {
   updated_at: string;
   source_url: string | null;
   image_url?: string | null;
+  public_partner?: unknown;
 }
 
 function toListing(row: ListingRow): Listing {
   const checks = [0, 1, 2, 3].map((i) => row.checks?.[i] ?? '') as VerificationChecks;
   return {
+    ...(row.type === 'partner' && row.public_partner ? {publicPartner: normalizePublicPartner(row.public_partner)} : {}),
+    operatingRegions: row.type === 'partner' ? normalizeOperatingRegions(row.operating_regions) : undefined,
     id: row.id,
+    isExample: row.type === 'partner' && row.id.startsWith('registered-partner-') ? false : undefined,
     type: row.type,
     name: row.name,
     region: row.region,
@@ -68,7 +75,9 @@ function toListing(row: ListingRow): Listing {
 
 function toRow(input: ListingInput) {
   return {
+    ...(input.type === 'partner' ? {operating_regions: input.operatingRegions ?? []} : {}),
     type: input.type,
+    ...(input.type === 'partner' ? {image_url: input.imageUrl ?? null, public_partner: input.publicPartner ?? null} : {}),
     name: input.name,
     region: input.region,
     province: input.province ?? null,
@@ -94,7 +103,7 @@ function toRow(input: ListingInput) {
 }
 
 // supabase/002_source_url.sql·004_image_url.sql 실행 전 DB에서도 동작하도록, 없는 컬럼은 빼고 다시 요청한다.
-const OPTIONAL_COLUMNS = ['image_url', 'source_url'] as const;
+const OPTIONAL_COLUMNS = ['operating_regions', 'image_url', 'source_url', 'public_partner'] as const;
 const missingColumns = new Set<string>();
 const columns = () => COLUMNS.split(',').filter((column) => !missingColumns.has(column)).join(',');
 const sourceUrlColumn = () => !missingColumns.has('source_url');
@@ -105,7 +114,7 @@ async function withSourceUrlFallback<T extends { error: { code?: string; message
     const { error } = result;
     const missing = error && (error.code === '42703' || error.code === 'PGRST204') ? OPTIONAL_COLUMNS.find((column) => !missingColumns.has(column) && error.message.includes(column)) : undefined;
     if (!missing) return result;
-    console.warn(`[listings] ${missing} column missing — run supabase/${missing === 'image_url' ? '004_image_url' : '002_source_url'}.sql`);
+    console.warn(`[listings] ${missing} column missing — run supabase/${missing === 'operating_regions' ? '007_partner_operating_regions' : missing === 'image_url' ? '004_image_url' : missing === 'public_partner' ? '006_public_requests' : '002_source_url'}.sql`);
     missingColumns.add(missing);
     result = await run();
   }
@@ -113,7 +122,16 @@ async function withSourceUrlFallback<T extends { error: { code?: string; message
 
 const rowFor = (input: ListingInput) => {
   const row: Record<string, unknown> = toRow(input);
+  if (missingColumns.has('operating_regions')) {
+    if (input.operatingRegions?.length) throw new Error('공개 운영 지역 저장을 위해 007_partner_operating_regions.sql을 먼저 적용하세요.');
+    delete row.operating_regions;
+  }
   if (!sourceUrlColumn()) delete row.source_url;
+  if (missingColumns.has('public_partner')) {
+    if (input.publicPartner && (input.publicPartner.categories.length || input.publicPartner.temperatures.length || input.publicPartner.centers.length || input.publicPartner.photos?.length)) throw new Error('공개 조건 저장을 위해 006_public_requests.sql을 먼저 적용하세요.');
+    delete row.public_partner;
+  }
+  if (missingColumns.has('image_url')) delete row.image_url;
   return row;
 };
 

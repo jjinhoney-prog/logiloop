@@ -7,6 +7,7 @@ import { useToast } from '@/components/providers/toast';
 import { PageHeading } from '@/components/ui';
 import { Select } from '@/components/ui/select';
 import { Modal } from '@/components/ui/modal';
+import { costRanges } from '@/lib/lead';
 import { inquiryTemperatureOptions as temperatureOptions, partnerTypes, regionOptions, sourceOptions, timingOptions } from '@/lib/data';
 import { inquirySummary, summaryFileName } from '@/lib/inquiry-summary';
 import { validateInquiry } from '@/lib/logic';
@@ -14,6 +15,7 @@ import type { InquiryData, InquiryErrors, Listing, TierId } from '@/lib/types';
 import { costNotice, disclosureOptions, requestSituations, responseNotice, unsureSituation } from '@/lib/service-content';
 import { leaseNoteRemaining, leaseReviewFields, leaseReviewNote, leaseVatOptions, rentReviewTitle, type LeaseReview } from '@/lib/lease-review';
 import { homeVisitContext, trackHomeAction } from '@/lib/funnel-client';
+import { formatInquiryVolume, storageUnits, outboundUnits, quantityLimit } from '@/lib/inquiry-volume';
 import { FormGuide } from './form-guide';
 
 const stepLabels = ['요청 상황', '기본 조건', '요청 내용 확인'];
@@ -29,7 +31,7 @@ export default function InquiryForm({
   stored = false,
 }: {
   initialTier?: TierId;
-  initialContext?: Partial<Pick<InquiryData, 'help' | 'region' | 'temperature' | 'note'>>;
+  initialContext?: Partial<Pick<InquiryData, 'help' | 'region' | 'regionDetail' | 'temperature' | 'note'>>;
   /** 서버에서 공개 매물만 골라 넘긴 검토 후보 */
   targetItems?: Pick<Listing, 'id' | 'name'>[];
   partnership?: boolean;
@@ -50,11 +52,12 @@ export default function InquiryForm({
   // 입력값은 ‘신청하기’ 전까지 이 컴포넌트 메모리에만 있다. 신청 시 /api/inquiry로 전송된다.
   const [data, setData] = useState<InquiryData>({
     tier: initialTier,
-    help: partnership ? '물류사 서비스 소개' : initialContext?.help || (initialTier === 3 ? unsureSituation.title : ''),
+    help: partnership ? (partnerTypes.some(([title]) => title === initialContext?.help) ? initialContext!.help! : '물류사 서비스 소개') : initialContext?.help || (initialTier === 3 ? unsureSituation.title : ''),
     item: '',
     volume: '아직 모름',
+    ...(!partnership ? { storageQuantity: '', storageUnit: '팔레트', outboundQuantity: '', outboundUnit: '주문건' } : {}),
     region: initialContext?.region || '아직 모름',
-    regionDetail: '',
+    regionDetail: initialContext?.regionDetail || '',
     timing: '아직 모름',
     temperature: initialContext?.temperature || '아직 모름',
     company: '',
@@ -64,6 +67,7 @@ export default function InquiryForm({
     consent: false,
     source: '직접 방문',
   });
+  const [costRange, setCostRange] = useState('');
   const rentReview = !partnership && data.help === rentReviewTitle;
   const noteLimit = rentReview ? leaseNoteRemaining(leaseReview) : partnership ? 1850 : 2000;
 
@@ -85,7 +89,7 @@ export default function InquiryForm({
     setErrors(found);
     const firstInvalid = Object.keys(found)[0];
     if (firstInvalid) {
-      if (firstInvalid === 'note') {
+      if (firstInvalid === 'note' || (rentReview && (firstInvalid === 'storageQuantity' || firstInvalid === 'outboundQuantity'))) {
         setDetailsOpen(true);
         requestAnimationFrame(() => document.getElementById(firstInvalid)?.focus());
       } else document.getElementById(firstInvalid)?.focus();
@@ -95,7 +99,7 @@ export default function InquiryForm({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const submittedData = { ...data, item: data.item.trim() || '미정', note: partnership ? `정보 공개 희망: ${disclosure}\n${data.note}`.trim() : data.note };
+  const submittedData = { ...data, volume: formatInquiryVolume(data), item: data.item.trim() || '미정', note: partnership ? `정보 공개 희망: ${disclosure}\n${data.note}`.trim() : data.note };
   const summary = () => inquirySummary(rentReview ? { ...submittedData, note: leaseReviewNote(leaseReview, data.note) } : submittedData, targetItems, partnership);
 
   function download() {
@@ -114,7 +118,7 @@ export default function InquiryForm({
       const response = await fetch('/api/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...submittedData, ...(!partnership ? { funnel: homeVisitContext() } : {}), ...(rentReview ? { leaseReview } : {}), partnership, targets: targetItems.map((i) => i.id), website }),
+        body: JSON.stringify({ ...submittedData, ...(!partnership ? { funnel: homeVisitContext() } : {}), ...(rentReview ? { leaseReview } : {}), ...(!partnership && costRange ? { costRange } : {}), partnership, targets: targetItems.map((i) => i.id), website }),
       });
       const result = (await response.json().catch(() => null)) as { ok: boolean; error?: string } | null;
       if (!response.ok || !result?.ok) throw new Error(result?.error || '접수하지 못했습니다.');
@@ -162,6 +166,25 @@ export default function InquiryForm({
 
   const leaseInput = ({ key, label, placeholder, maxLength }: (typeof leaseReviewFields)[number]) => (
     <label className="form-field" key={key}><span>{label}</span><input value={leaseReview[key] || ''} onChange={(e) => setLeaseReview((prev) => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} maxLength={maxLength} /></label>
+  );
+
+  const volumeInputs = (
+    <div className="form-grid inquiry-volumes" role="group" aria-label="보관과 월 출고 조건">
+      {([
+        ['storageQuantity', 'storageUnit', '보관 규모', storageUnits],
+        ['outboundQuantity', 'outboundUnit', '월 출고량', outboundUnits],
+      ] as const).map(([quantity, unit, label, units]) => (
+        <div className="form-field" key={quantity}>
+          <label htmlFor={quantity}>{label} (선택)</label>
+          <input id={quantity} value={data[quantity] ?? ''} inputMode="decimal" maxLength={quantityLimit}
+            placeholder="모르면 비워두세요" onChange={(e) => field(quantity, e.target.value)}
+            aria-invalid={Boolean(errors[quantity])} aria-describedby={`${quantity}-hint${errors[quantity] ? ` ${quantity}-error` : ''}`} />
+          <Select label={`${label} 단위`} value={data[unit] ?? units[0]} onChange={(value) => field(unit, value)} options={[...units]} />
+          <small className="muted" id={`${quantity}-hint`}>{quantity === 'storageQuantity' ? '평균적으로 보관할 수량이나 면적입니다.' : '한 달 출고량입니다. 주문 건수와 박스 수를 구분해 주세요.'}</small>
+          {errors[quantity] && <small className="field-error" id={`${quantity}-error`}>{errors[quantity]}</small>}
+        </div>
+      ))}
+    </div>
   );
 
   return (
@@ -230,7 +253,7 @@ export default function InquiryForm({
                     <div className="form-field"><span>{partnership ? '시설 소재지·서비스 지역' : '희망 지역 · 전국 시·도'}</span><Select label={partnership ? '시설 소재지·서비스 지역' : '희망 지역 · 전국 시·도'} value={data.region} onChange={(value) => field('region', value)} options={regionOptions} /></div>
                     {rentReview ? leaseReviewFields.filter(({ key }) => key === 'rent' || key === 'area').map(leaseInput) : <>
                       {input('item', partnership ? '취급 품목' : '보관·출고 품목', '예: 생활용품 / 비워두면 미정')}
-                      <label className="form-field"><span>{partnership ? '보관·처리 규모' : '대략적 물량'}</span><input value={data.volume} onChange={(e) => field('volume', e.target.value)} placeholder="예: 100PLT / 월 1,000건 / 아직 모름" maxLength={100} /></label>
+                      {partnership ? <label className="form-field"><span>보관·처리 규모</span><input value={data.volume} onChange={(e) => field('volume', e.target.value)} placeholder="수량과 단위를 함께 적어주세요" maxLength={100} /></label> : volumeInputs}
                     </>}
                   </div>
                   <details className="inquiry-details" open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)}>
@@ -238,9 +261,10 @@ export default function InquiryForm({
                     <div className="inquiry-details-body">
                       <div className="form-grid">
                         {rentReview && input('item', '보관·출고 품목', '예: 생활용품 / 비워두면 미정')}
-                        {rentReview && <label className="form-field"><span>대략적 물량</span><input value={data.volume} onChange={(e) => field('volume', e.target.value)} maxLength={100} /></label>}
+                        {rentReview && volumeInputs}
                         <label className="form-field"><span>{partnership ? '시설 주소·서비스 가능 지역 (선택)' : '세부 지역·복수 거점 (선택)'}</span><input value={data.regionDetail} onChange={(e) => field('regionDetail', e.target.value)} maxLength={150} placeholder="예: 경기 이천·용인 / 전국 검토" /></label>
                         <div className="form-field"><span>{partnership ? '수용 가능 시점' : '도입·입주 시점'}</span><Select label={partnership ? '수용 가능 시점' : '도입·입주 시점'} value={data.timing} onChange={(value) => field('timing', value)} options={timingOptions} /></div>
+                        {!partnership && <div className="form-field"><span>현재 월 물류비 (선택)</span><Select label="현재 월 물류비" value={costRange || '선택 안 함'} onChange={(value) => setCostRange(value === '선택 안 함' ? '' : value)} options={['선택 안 함', ...costRanges]} /></div>}
                         <div className="form-field"><span>{partnership ? '운영 가능한 온도대' : '필요 온도대'}</span><Select label={partnership ? '운영 가능한 온도대' : '필요 온도대'} value={data.temperature} onChange={(value) => field('temperature', value)} options={temperatureOptions} /></div>
                       </div>
                       {rentReview && <fieldset className="lease-review-fields">

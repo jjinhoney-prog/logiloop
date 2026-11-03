@@ -11,7 +11,7 @@ export function PageHeading({ eyebrow, title, description, audience, children }:
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         {audience && <p className="page-audience">{audience}</p>}
         {description && <p>{description}</p>}
@@ -65,11 +65,11 @@ export function CatalogCard({ item }: { item: Listing }) {
   const Icon = warehouse ? Warehouse : Truck;
   return (
     <article className="catalog-card">
-      <div className={`card-cover temp-${temperatureTone(item.temperature)}${item.imageUrl ? ' card-cover-photo' : ''}`}>
+      <div className={`card-cover temp-${temperatureTone(item.temperature)}${item.imageUrl ? warehouse ? ' card-cover-photo' : ' card-cover-logo' : ''}`}>
         {item.imageUrl && (
           // 지음 홈페이지 원본 사진을 그대로 쓴다(Vercel 이미지 최적화 사용량을 쓰지 않음).
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="cover-image" src={item.imageUrl} alt={`${item.name} 외관 사진`} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+          <img className="cover-image" src={item.imageUrl} alt={`${item.name} ${warehouse ? '외관 사진' : '로고'}`} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
         )}
         <div className="cover-top">
           <TypeBadge type={item.type} />

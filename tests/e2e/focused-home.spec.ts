@@ -109,9 +109,8 @@ test('3PL registration stays visible after scrolling and opens the partner form'
   await page.screenshot({ path: testInfo.outputPath('persistent-registration.png') });
   await registration.click();
   await expect(page).toHaveURL(/\/partnership$/);
-  await expect(page.getByRole('radio', { name: /물류사 서비스 소개/ })).toBeChecked();
-  await page.getByRole('button', { name: '기본 조건 입력' }).click();
-  await expect(page.locator('#company')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '3PL 업체 등록', exact: true })).toBeVisible();
+  await expect(page.locator('#partner-company')).toBeVisible();
 });
 
 test('home motion respects reduced motion and leaves content readable', async ({ page }, testInfo) => {

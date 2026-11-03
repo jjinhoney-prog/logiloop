@@ -1,3 +1,4 @@
+import { fillPartner } from './partner-helper';
 import { expect, test } from '@playwright/test';
 
 test('home situation carries into the request; unknown conditions can be submitted', async ({ page }) => {
@@ -41,25 +42,16 @@ test('catalog filters and partner services survive the request handoff', async (
 
 test('partnership captures its own fields and disclosure preference', async ({ page }) => {
   let posted: Record<string, unknown> | undefined;
-  await page.route('**/api/inquiry', (route) => {
+  await page.route('**/api/partnership', (route) => {
     posted = route.request().postDataJSON();
-    return route.fulfill({ json: { ok: true } });
+    return route.fulfill({ status: 201, json: { ok: true, id: 42, token: 'a'.repeat(64) } });
   });
   await page.goto('/partnership');
-  await page.getByRole('button', { name: '기본 조건 입력' }).click();
-  await expect(page.getByRole('combobox', { name: '시설 소재지·서비스 지역' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: '수용 가능 시점' })).toBeVisible();
-  await page.getByRole('combobox', { name: '정보 공개 희망 범위' }).click();
-  await page.getByRole('option', { name: '개별 화주 요청에 한해 정보 제공 검토' }).click();
-  await page.locator('#company').fill('파트너 테스트');
-  await page.locator('#name').fill('담당자');
-  await page.locator('#phone').fill('0511234567');
-  await page.locator('#consent').check();
-  await page.getByRole('button', { name: '요청 내용 확인' }).click();
-  await expect(page.locator('.prepared-panel pre')).toContainText('정보 공개 희망: 개별 화주 요청에 한해 정보 제공 검토');
-  await page.getByRole('button', { name: '파트너 신청하기' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  expect(posted?.note).toBe('정보 공개 희망: 개별 화주 요청에 한해 정보 제공 검토');
+  await fillPartner(page);
+  await page.getByLabel('공개 희망 범위').selectOption('비공개 매칭만 희망');
+  await page.getByRole('button', { name: '3PL 업체 등록 신청' }).click();
+  await expect(page.getByRole('heading', { name: '업체 등록이 접수되었습니다.' })).toBeVisible();
+  expect(posted?.profile).toMatchObject({ disclosure: '비공개 매칭만 희망', regions: [{ province: '부산', district: '강서구' }], services: ['보관'], temperatures: ['상온'], centers: [] });
 });
 
 test('mixed comparison explains operating scope and keeps selected candidates', async ({ page, isMobile }) => {

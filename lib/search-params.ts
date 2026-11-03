@@ -21,9 +21,10 @@ export function parseConsultationParams(params: RawParams): { tier: TierId; targ
 export function parseRequestContext(params: RawParams) {
   const situation = requestSituations.find((item) => item.id === params.situation);
   const region = typeof params.region === 'string' && regionOptions.includes(params.region) ? params.region : '아직 모름';
+  const regionDetail = typeof params.regionDetail === 'string' ? params.regionDetail.trim().slice(0, 150) : '';
   const temperature = typeof params.temperature === 'string' && inquiryTemperatureOptions.includes(params.temperature) ? params.temperature : '아직 모름';
   const query = typeof params.query === 'string' ? params.query.trim().slice(0, 100) : '';
   const service = typeof params.service === 'string' ? params.service.trim().slice(0, 100) : '';
   const size = typeof params.size === 'string' && sizes.slice(1).includes(params.size) ? params.size : '';
-  return { help: situation?.title ?? '', tier: situation?.tier, region, temperature, note: [query && `목록 검색 조건: ${query}`, size && `희망 면적: ${size}`, service && `필요 작업: ${service}`].filter(Boolean).join('\n') };
+  return { help: situation?.title ?? '', tier: situation?.tier, region, regionDetail, temperature, note: [query && `목록 검색 조건: ${query}`, size && `희망 면적: ${size}`, service && `필요 작업: ${service}`].filter(Boolean).join('\n') };
 }

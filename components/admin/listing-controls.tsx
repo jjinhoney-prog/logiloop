@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode, type RefObject } from 'react';
 import Image from 'next/image';
 import { ImageOff, Trash2, X, ZoomIn } from 'lucide-react';
+import { validPartnerLogo } from '@/lib/partner-brand';
 import { removeListing } from '@/app/admin/actions';
 import { useToast } from '@/components/providers/toast';
 
@@ -26,7 +27,7 @@ export function ListingPhoto({ name, imageUrl }: { name: string; imageUrl?: stri
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
-  const usable = imageUrl && (/^https?:\/\//i.test(imageUrl) || /^\/(?!\/)/.test(imageUrl));
+  const usable = imageUrl && (/^https?:\/\//i.test(imageUrl) || /^\/(?!\/)/.test(imageUrl) || (imageUrl.startsWith('data:') && validPartnerLogo(imageUrl)));
   if (!usable || failed) return <span className="admin-photo-empty"><ImageOff size={22} aria-hidden="true" /><span>{failed ? '사진 로딩 실패' : '사진 없음'}</span></span>;
   return <>
     <button type="button" className="admin-photo-thumb" ref={trigger} aria-label={`${name} 사진 크게 보기`} onClick={() => setOpen(true)}>

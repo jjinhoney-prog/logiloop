@@ -1,3 +1,4 @@
+import {partnerCategories} from '@/lib/partner-brand';
 import { Select } from '@/components/ui/select';
 import { RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { regions, sizes, temperatures } from '@/lib/data';
@@ -8,6 +9,7 @@ export interface FilterState {
   temperature: string;
   size: string;
   service: string;
+  category: string;
 }
 
 export function Filters({
@@ -16,12 +18,14 @@ export function Filters({
   onChange,
   onReset,
   serviceOptions = [],
+  fixedRegion,
 }: {
   warehouse: boolean;
   value: FilterState;
   onChange: (patch: Partial<FilterState>) => void;
   onReset: () => void;
   serviceOptions?: string[];
+  fixedRegion?: string;
 }) {
   return (
     <div className="filter-panel">
@@ -46,7 +50,7 @@ export function Filters({
         </span>
         <div className="select-field">
           <span>지역</span>
-          <Select label="지역" value={value.region} onChange={(value) => onChange({ region: value })} options={regions} />
+          {fixedRegion ? <strong>{fixedRegion}</strong> : <Select label="지역" value={value.region} onChange={(value) => onChange({ region: value })} options={regions} />}
         </div>
         <div className="select-field">
           <span>온도</span>
@@ -58,6 +62,7 @@ export function Filters({
             <Select label="면적" value={value.size} onChange={(value) => onChange({ size: value })} options={sizes} />
           </div>
         )}
+        {!warehouse && <div className="select-field"><span>품목</span><Select label="취급 품목" value={value.category} onChange={category=>onChange({category})} options={['전체 품목',...partnerCategories]}/></div>}
         {!warehouse && <div className="select-field"><span>작업</span><Select label="제공 작업" value={value.service} onChange={(service) => onChange({ service })} options={['전체 작업', ...serviceOptions]} /></div>}
         <button className="reset-button" onClick={onReset}>
           <RotateCcw size={15} />

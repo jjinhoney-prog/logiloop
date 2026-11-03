@@ -1,9 +1,12 @@
 'use client';
 
+import { shipperLeadRows, shipperQuoteRows } from '@/lib/shipper-quote';
+import { inquiryLead, leadOrder } from '@/lib/lead';
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Archive, ArrowUpRight, ClipboardList, Eye, EyeOff, Filter, LogOut, MailWarning, Pencil, Plus, RotateCcw, Save, Warehouse, X } from 'lucide-react';
 import { changeListingVisibility, logout, saveInquiryProgress, type ActionResult } from '@/app/admin/actions';
+import { PartnerTable } from './partner-table';
 import { DeleteListingButton, ListingPhoto } from './listing-controls';
 import { useToast } from '@/components/providers/toast';
 import { DemoNotice, Empty, PageHeading } from '@/components/ui';
@@ -11,7 +14,7 @@ import { inquiryStages, listingHref, tiers, visibilityLabels } from '@/lib/data'
 import { formatKst } from '@/lib/inquiry-email';
 import type { AdminListing, InquiryRecord, InquiryStage, MailStatus, Visibility } from '@/lib/types';
 
-export type AdminTab = 'inquiries' | 'listings';
+export type AdminTab = 'inquiries' | 'listings' | 'partners';
 
 const mailLabels: Record<MailStatus, string> = { pending: '발송 대기', sent: '발송', failed: '발송 실패', skipped: '메일 미설정' };
 
@@ -19,8 +22,10 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
   const [tab, setTab] = useState<AdminTab>(initialTab);
   const [stage, setStage] = useState<'전체' | InquiryStage>('전체');
   const [active, setActive] = useState<number | null>(null);
+  const [sort, setSort] = useState<'latest' | 'lead'>('latest');
 
-  const filtered = inquiries.filter((r) => stage === '전체' || r.stage === stage);
+  const staged = inquiries.filter((r) => stage === '전체' || r.stage === stage);
+  const filtered = sort === 'lead' ? [...staged].sort((a, b) => leadOrder[inquiryLead(a)] - leadOrder[inquiryLead(b)]) : staged;
   const current = inquiries.find((r) => r.id === active);
   const stats = [
     [ClipboardList, '신규 접수', `${inquiries.filter((r) => r.stage === '접수').length}건`, '아직 연락하지 않은 상담'],
@@ -32,6 +37,7 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
     <div className="page admin-page">
       <PageHeading eyebrow="OPERATIONS WORKSPACE" title="운영 워크스페이스" description="상담 접수와 매물 노출을 관리합니다.">
         <div className="admin-actions">
+          <Link className="button button-outline" href="/admin/quotes">3PL 견적 관리</Link>
           <Link className="button button-dark" href="/admin/listings/new">
             <Plus size={16} />
             매물 등록
@@ -65,12 +71,13 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
             <button role="tab" id="inquiries-tab" aria-controls="admin-panel" aria-selected={tab === 'inquiries'} onClick={() => setTab('inquiries')}>
               상담 접수<span>{inquiries.length}</span>
             </button>
+            <button role="tab" id="partners-tab" aria-controls="admin-panel" aria-selected={tab === 'partners'} onClick={() => setTab('partners')}>3PL 업체<span>{inquiries.filter(r => r.kind === 'partnership').length}</span></button>
             <button role="tab" id="listings-tab" aria-controls="admin-panel" aria-selected={tab === 'listings'} onClick={() => setTab('listings')}>
               매물 관리<span>{listings.length}</span>
             </button>
           </div>
-          <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={tab === 'inquiries' ? 'inquiries-tab' : 'listings-tab'}>
-            {tab === 'inquiries' ? (
+          <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={`${tab}-tab`}>
+            {tab === 'partners' ? <PartnerTable inquiries={inquiries.filter(r => r.kind === 'partnership')} /> : tab === 'inquiries' ? (
               <>
                 <div className="admin-table-top">
                   <h2>상담 접수 목록</h2>
@@ -81,6 +88,12 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
                       {inquiryStages.map((s) => (
                         <option key={s}>{s}</option>
                       ))}
+                    </select>
+                  </label>
+                  <label>
+                    <select aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+                      <option value="latest">최신순</option>
+                      <option value="lead">리드 우선순위순 (물류비×시기)</option>
                     </select>
                   </label>
                 </div>
@@ -113,7 +126,7 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
                               {r.name} · {r.phone}
                             </small>
                           </td>
-                          <td>{r.kind === 'partnership' ? `파트너 · ${r.help}` : `${r.tier}등급 ${tiers.find((t) => t.id === r.tier)?.name ?? ''}`}</td>
+                          <td>{r.kind === 'partnership' ? `파트너 · ${r.help}` : `${r.tier}등급 ${tiers.find((t) => t.id === r.tier)?.name ?? ''}`}{r.kind === 'consultation' && <small><span className={inquiryLead(r) === 'A' ? 'status-tag amber' : 'status-tag'} title="현재 월 물류비 구간과 전환 시기로 정한 응대 우선순위">리드 {inquiryLead(r)}</span></small>}</td>
                           <td>{r.listings.map((l) => l.name).join(', ') || '—'}</td>
                           <td>
                             <span className="status-tag">{r.stage}</span>
@@ -169,6 +182,8 @@ function InquiryEditor({ inquiry, onClose }: { inquiry: InquiryRecord; onClose: 
     ['검토 후보', inquiry.listings.map((l) => l.name).join(', ') || '미정'],
     ['유입경로', inquiry.source],
     ['요청사항', inquiry.note || '없음'],
+    ...(inquiry.kind === 'consultation' ? [['리드 우선순위', inquiryLead(inquiry)] as [string, string]] : []),
+    ...(inquiry.shipperQuote ? [...shipperQuoteRows(inquiry.shipperQuote), ...shipperLeadRows(inquiry.shipperQuote)] : []),
   ];
   return (
     <div className="admin-editor">
@@ -180,6 +195,7 @@ function InquiryEditor({ inquiry, onClose }: { inquiry: InquiryRecord; onClose: 
           <X size={19} />
         </button>
       </div>
+      {inquiry.kind === 'consultation' && <Link className="button button-outline" href={`/admin/quotes?inquiry=${inquiry.id}`}>이 화주로 견적 요청 만들기</Link>}
       <dl className="spec-grid admin-detail">
         {details.map(([k, v]) => (
           <div key={k}>

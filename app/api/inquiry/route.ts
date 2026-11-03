@@ -11,7 +11,7 @@ import { isDbConfigured } from '@/lib/supabase';
 const FROM = '로지루프 <onboarding@resend.dev>';
 const MAX_BODY_BYTES = 16 * 1024;
 
-type Result = { ok: true } | { ok: false; error: string; fields?: Record<string, string> };
+type Result = { ok: true; id?: number } | { ok: false; error: string; fields?: Record<string, string> };
 
 const json = (body: Result, status = 200) => Response.json(body, { status });
 
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   const attribution = !value.partnership ? funnelContext((body as Record<string, unknown>).funnel) : null;
   const accepted = () => {
     if (attribution) recordFunnelEvent('request_submitted', attribution.visitId, 'form');
-    return json({ ok: true });
+    return json({ ok: true, ...(inquiryId!==undefined?{id:inquiryId}:{}) });
   };
 
   const receivedAt = new Date();

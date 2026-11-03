@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-marketplace/
 out/
 .env*
 !.env.example
@@ -19,3 +20,12 @@ test-results/
 
 # 실매물 가져오기 원본·생성 SQL (저장소 공개 상태이므로 커밋하지 않음)
 supabase/private/
+
+# 내부 문서·작업 산출물 (공개 저장소에 올리지 않음)
+outputs/
+tmp/
+PRODUCT.md
+docs/*
+!docs/db-design.md
+!docs/funnel-measurement.md
+!docs/plan.md

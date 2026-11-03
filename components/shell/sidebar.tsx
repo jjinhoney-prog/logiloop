@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, Handshake, Settings2 } from 'lucide-react';
+import { ArrowUpRight, Handshake, Settings2, ClipboardList } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
 import { LOGO_TONE, Logo } from './logo';
 import { isActive, navigation } from './nav';
@@ -13,7 +13,7 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
   return (
     <aside className={`sidebar ${open ? 'open' : ''}`}>
       <Link className="brand" href="/" onClick={onNavigate}>
-        <Logo tone={LOGO_TONE.black} />
+        <Logo tone={LOGO_TONE.white} />
         <span className="brand-sub">로지루프 by 지음</span>
       </Link>
       <div className="nav-label">YOUR NEXT LOGISTICS</div>
@@ -43,6 +43,11 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
         <Link className="side-secondary" href="/admin" onClick={onNavigate}>
           <Settings2 size={18} />
           운영 워크스페이스
+          <span className="tiny-badge">관리자</span>
+        </Link>
+        <Link className="side-secondary" href="/admin/quotes" onClick={onNavigate} aria-current={path === '/admin/quotes' ? 'page' : undefined}>
+          <ClipboardList size={18} />
+          3PL 견적 관리
           <span className="tiny-badge">관리자</span>
         </Link>
         <div className="side-copyright">© LOGILOOP · 지음부동산중개법인(주)</div>

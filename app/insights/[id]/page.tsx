@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { articles } from '@/lib/data';
+import { pageMetadata } from '@/lib/page-metadata';
+import { warehouseRegions, warehouseRegionHref } from '@/lib/warehouse-regions';
+import styles from '@/components/catalog/region-guide.module.css';
 
 export const dynamicParams = false;
 
@@ -12,7 +15,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<'/insights/[id]'>): Promise<Metadata> {
   const { id } = await props.params;
-  return { title: articles.find((a) => a.id === id)?.title || '물류 가이드' };
+  const article = articles.find((a) => a.id === id);
+  if (!article) notFound();
+  return pageMetadata(article.title, article.description, `/insights/${article.id}`);
 }
 
 export default async function Page(props: PageProps<'/insights/[id]'>) {
@@ -44,11 +49,18 @@ export default async function Page(props: PageProps<'/insights/[id]'>) {
           </section>
         ))}
       </div>
+      <nav aria-label="가이드와 함께 볼 창고·물류사" className={styles.navigation}>
+        <Link href="/warehouses">창고·물류센터 전체 보기</Link>
+        {warehouseRegions.map((region) => (
+          <Link key={region.slug} href={warehouseRegionHref(region.slug)}>{region.name} 창고 임대</Link>
+        ))}
+        {article.id === 'lease-or-3pl' && <Link href="/partners">물류사·3PL 후보 보기</Link>}
+      </nav>
       <div className="article-cta">
         <h2>우리 회사 조건으로 정리해 볼까요?</h2>
         <p>아직 정해지지 않은 항목은 상담하면서 확인할 수 있습니다.</p>
-        <Link className="button button-dark" href="/consultation">
-          상담 준비하기
+        <Link className="button button-dark" href={`/consultation?${new URLSearchParams({ situation: article.requestSituation, service: article.title }).toString()}`}>
+          {article.requestLabel}
           <ArrowRight size={16} />
         </Link>
       </div>

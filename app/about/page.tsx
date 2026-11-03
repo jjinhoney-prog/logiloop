@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { PageHeading, Roles, SectionTitle } from '@/components/ui';
@@ -6,7 +6,11 @@ import { ServicePreview, ServiceSteps } from '@/components/home/service-preview'
 import { tiers } from '@/lib/data';
 import { costNotice, responseNotice } from '@/lib/service-content';
 
-export const metadata: Metadata = { title: '서비스 안내' };
+export const metadata = pageMetadata(
+  '서비스 소개·운영 주체',
+  '로지루프(LogiLoop)는 지음부동산중개법인이 운영하는 물류 콘텐츠·공급/수요 매칭 플랫폼입니다. 창고 임대·3PL 물류사 비교, 상담 절차와 운영 주체의 역할을 확인하세요.',
+  '/about',
+);
 
 const faqs = [
   ['현재 임차료보다 낮은 조건을 찾을 수 있나요?', '현재 임차료·관리비와 면적·시설 조건을 기준으로 비용을 낮출 수 있는 후보를 검토합니다. 실제 절감 여부는 후보 견적, 이전비·원상복구비·추가 운송비를 확인한 뒤 안내합니다. 미확인 비용은 0원으로 계산하지 않으며 현재 창고 유지가 유리할 수도 있습니다.'],
