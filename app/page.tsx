@@ -16,26 +16,42 @@ export const metadata: Metadata = {
   twitter: { ...homeMetadata.twitter, title: '로지루프 | 창고 임대·물류사 찾기' },
 };
 
-const website = {
+// 브랜드명 '로지루프'를 구글이 독립 개체로 인식하도록 WebSite와 Organization을 함께 선언한다.
+const structuredData = {
   '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  '@id': 'https://logiloop.co.kr/#website',
-  name: '로지루프',
-  alternateName: ['LogiLoop', '로지루프 by 지음'],
-  url: 'https://logiloop.co.kr/',
-  inLanguage: 'ko-KR',
-  description: homeMetadata.description,
-  publisher: {
-    '@type': 'Organization',
-    name: '지음부동산중개법인',
-    legalName: '지음부동산중개법인 주식회사',
-    url: 'https://ziumrealty.com/',
-  },
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://logiloop.co.kr/#organization',
+      name: '로지루프',
+      alternateName: ['LogiLoop', 'LOGILOOP', '로지루프 LogiLoop'],
+      url: 'https://logiloop.co.kr/',
+      logo: 'https://logiloop.co.kr/icon.svg',
+      description: homeMetadata.description,
+      areaServed: '대한민국',
+      parentOrganization: {
+        '@type': 'Organization',
+        name: '지음부동산중개법인',
+        legalName: '지음부동산중개법인 주식회사',
+        url: 'https://ziumrealty.com/',
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://logiloop.co.kr/#website',
+      name: '로지루프',
+      alternateName: ['LogiLoop', '로지루프 by 지음'],
+      url: 'https://logiloop.co.kr/',
+      inLanguage: 'ko-KR',
+      description: homeMetadata.description,
+      publisher: { '@id': 'https://logiloop.co.kr/#organization' },
+    },
+  ],
 };
 
 export default function Page() {
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(website).replace(/</g, '\\u003c') }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
     <Home />
   </>;
 }
