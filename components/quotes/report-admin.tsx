@@ -8,7 +8,7 @@ import { ReportBody } from './quote-report';
 type Loaded = Extract<Awaited<ReturnType<typeof loadQuoteReport>>, { ok: true }>;
 
 /** 견적 묶음별 화주 리포트: 의견·추천·업체명 공개·단계 → 링크 발급 → 직접 전달 기록. */
-export function ReportAdmin({ groupId, quotes }: { groupId: string; quotes: { id: string; partnerName: string }[] }) {
+export function ReportAdmin({ groupId, quotes, version }: { groupId: string; quotes: { id: string; partnerName: string }[]; version: string }) {
   const router = useRouter();
   const [data, setData] = useState<Loaded | null>(null); const [settings, setSettings] = useState<ReportSettings>(emptySettings);
   const [link, setLink] = useState(''); const [delivery, setDelivery] = useState(''); const [preview, setPreview] = useState<ReportView | null>(null);
@@ -20,6 +20,9 @@ export function ReportAdmin({ groupId, quotes }: { groupId: string; quotes: { id
   const load = useCallback(async () => apply(await loadQuoteReport(groupId)), [apply, groupId]);
   // 묶음이 바뀌면 부모가 key로 다시 마운트하므로 여기서는 불러오기만 한다.
   useEffect(() => { let alive = true; loadQuoteReport(groupId).then(r => { if (alive) apply(r); }); return () => { alive = false; }; }, [apply, groupId]);
+  // 업체 회신·담당자 정리로 견적이 바뀌면 작성 중인 설정은 두고 미리보기만 새로 불러온다.
+  const seen = useRef(version);
+  useEffect(() => { if (seen.current === version) return; seen.current = version; let alive = true; loadQuoteReport(groupId).then(r => { if (alive && r.ok) setPreview(r.view); }); return () => { alive = false; }; }, [groupId, version]);
   async function run(task: () => Promise<{ ok: boolean; error?: string; token?: string }>, done: string) {
     if (busy.current) return; busy.current = true; setPending(true); setError(''); setMessage('');
     try { const r = await task(); if (!r.ok) throw new Error(r.error); if (r.token) setLink(`${window.location.origin}/quote/report#${groupId}.${r.token}`); setMessage(done); await load(); router.refresh(); }

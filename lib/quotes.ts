@@ -8,7 +8,11 @@ export interface QuoteSpec {
 export interface QuoteResponse {
   availability: string; center: string; start: string; rates: string[];
   minimum: string; extra: string; setup: string; vat: string; validUntil: string; note: string;
+  /** 업체가 링크로 직접 회신했는지, 담당자가 업체 자체 견적서를 표준 양식으로 옮겼는지. 없으면 업체 회신. */
+  source?: QuoteSource; original?: string; enteredAt?: string;
 }
+export const quoteSources = ['업체 회신', '담당자 정리'] as const;
+export type QuoteSource = typeof quoteSources[number];
 export interface QuoteView {
   id: string; groupId: string; inquiryId: number; partnerId: number; partnerName: string;
   spec: QuoteSpec; state: QuoteState; response: QuoteResponse | null; revision: string;
@@ -38,7 +42,25 @@ export function normalizeQuoteResponse(input: unknown): QuoteResponse {
   if (!Array.isArray(v.rates) || v.rates.length !== 6) throw new Error('견적 항목을 확인하세요.');
   result.rates = v.rates.map(number);
   for (const key of ['minimum','extra','setup'] as const) result[key] = number(v[key]);
-  return result;
+  return { ...result, source: '업체 회신' };
+}
+/** 업체가 자체 양식(엑셀·PDF·카톡)으로 보낸 견적을 담당자가 표준 양식으로 옮긴다. 원문은 대조용으로 보관한다. */
+export function normalizeProxyResponse(input: unknown, now = new Date()): QuoteResponse {
+  const v = object(input);
+  const original = text(v.original, 8000);
+  if (!original) throw new Error('업체가 보낸 견적 원문(또는 파일명·주요 수치)을 붙여넣으세요.');
+  return { ...normalizeQuoteResponse(input), source: '담당자 정리', original, enteredAt: now.toISOString() };
+}
+/** 회신기한까지 남은 일수(한국시간). 음수면 지남. */
+export function daysUntilDeadline(deadline: string, now = Date.now()) {
+  if (!validDate(deadline)) return null;
+  const today = new Date(now + 9 * 3600000).toISOString().slice(0, 10);
+  return Math.round((Date.parse(deadline) - Date.parse(today)) / 86400000);
+}
+export function quoteReminderText(id: string, partnerName: string, spec: QuoteSpec, now = Date.now()) {
+  const d = daysUntilDeadline(spec.deadline, now);
+  const due = d === null ? '회신기한 확인 필요' : d > 0 ? `회신기한 ${spec.deadline} (D-${d})` : d === 0 ? `회신기한 오늘(${spec.deadline})` : `회신기한 ${spec.deadline} 경과`;
+  return [`[로지루프] ${partnerName} 견적 회신 요청 · ${id.slice(0, 8).toUpperCase()}`, `${spec.region} · ${spec.temperature} · ${spec.item} 건입니다.`, due, '', '화주가 비교 검토를 기다리고 있습니다.', '보내드린 링크 입력이 어려우시면 귀사 견적서(엑셀·PDF·사진) 그대로 회신해 주셔도 됩니다.', '로지루프가 표준 비교표로 정리해 화주에게 전달합니다.', '', '꼭 필요한 항목: 보관·입고·출고·포장·택배·반품 단가 / 월 최소요금 / 초기비용 / 부가세 포함 여부 / 견적 유효기간'].join('\n');
 }
 /** Six item subtotal is subject to a monthly minimum; additional recurring charges are added after it. */
 export function quoteTotal(spec: QuoteSpec, reply: QuoteResponse | null, now = Date.now()): { monthly: number | null; firstMonth: number | null; reason: string } {

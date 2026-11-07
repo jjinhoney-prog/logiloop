@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { assertAdmin } from '@/lib/auth';
 import { getInquiries } from '@/lib/inquiries';
 import { readPartner } from '@/lib/partner-store';
-import { deadlinePassed, normalizeQuoteSpec } from '@/lib/quotes';
+import { deadlinePassed, normalizeProxyResponse, normalizeQuoteSpec } from '@/lib/quotes';
 import { insertQuotes, issueQuoteToken, patchQuote, quoteIdValid, quoteView, readQuote } from '@/lib/quote-store';
 import { createReport, issueReportToken, listGroupQuotes, patchReport, readReport, reportViewFor, settingsOf } from '@/lib/quote-report-store';
 import { normalizeSettings, reportStages } from '@/lib/quote-report';
@@ -43,6 +43,21 @@ export async function updateQuoteRequest(id: string, revision: string, action: '
     const updated = await patchQuote(row,action === 'close' ? {state:'종결',access_hash:null,expires_at:null} : {state:'전달 완료',sent_at:new Date().toISOString(),delivery_note:deliveryNote.trim()});
     revalidatePath('/admin/quotes'); return {ok:true as const,view:quoteView(updated)};
   } catch(err) { return {ok:false as const,error:err instanceof Error ? err.message : '변경하지 못했습니다.'}; }
+}
+/** 업체 자체 양식 견적을 담당자가 표준 양식으로 옮겨 회신 완료 처리. 회신기한이 지나 늦게 온 견적도 받는다. */
+export async function enterQuoteOnBehalf(id: string, revision: string, input: unknown) {
+  await assertAdmin();
+  try {
+    if (!quoteIdValid(id)) throw new Error('요청을 확인하세요.');
+    const row = await readQuote(id);
+    if (!row) throw new Error('견적 요청을 찾을 수 없습니다.');
+    if (row.revision !== revision) throw new Error('내용이 변경되었습니다. 새로고침 후 다시 시도하세요.');
+    if (row.state === '종결') throw new Error('종결된 요청입니다. 새 요청을 만드세요.');
+    const response = normalizeProxyResponse(input);
+    const updated = await patchQuote(row, { response, state: '회신 완료', replied_at: row.replied_at ?? new Date().toISOString(), ...(row.sent_at ? {} : { sent_at: new Date().toISOString(), delivery_note: row.delivery_note || '링크 외 채널로 요청·회신' }) });
+    revalidatePath('/admin/quotes');
+    return { ok: true as const, view: quoteView(updated) };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '저장하지 못했습니다.' }; }
 }
 
 // ── 화주용 비교 리포트 (supabase/008_quote_reports.sql) ──
