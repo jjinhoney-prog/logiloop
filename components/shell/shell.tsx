@@ -35,6 +35,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         <Footer />
         {showConsultation && !open && <div className="mobile-consultation">
           <Link className="button button-dark" href="/consultation">물류사·창고 찾기<ArrowRight size={15} /></Link>
+          <Link className="button button-outline" href="/partnership/warehouse">창고 임대 등록</Link>
           <Link className="button button-yellow" href="/partnership">3PL 업체 등록</Link>
         </div>}
       </div>

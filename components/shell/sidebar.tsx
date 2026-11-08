@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, Handshake, Settings2, ClipboardList } from 'lucide-react';
+import { ArrowUpRight, Handshake, Settings2, ClipboardList, Warehouse } from 'lucide-react';
 import { useCompare } from '@/components/providers/compare-provider';
 import { LOGO_TONE, Logo } from './logo';
 import { isActive, navigation } from './nav';
@@ -38,6 +38,11 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
         <Link className="side-secondary sidebar-partner-register" href="/partnership" onClick={onNavigate}>
           <Handshake size={18} />
           3PL 업체 등록
+          <ArrowUpRight size={16} />
+        </Link>
+        <Link className="side-secondary sidebar-warehouse-register" href="/partnership/warehouse" onClick={onNavigate}>
+          <Warehouse size={18} />
+          창고 임대 등록
           <ArrowUpRight size={16} />
         </Link>
         <Link className="side-secondary" href="/admin" onClick={onNavigate}>
