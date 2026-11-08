@@ -3,7 +3,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createQuoteRequest, updateQuoteRequest } from '@/app/admin/quotes/actions';
-import { daysUntilDeadline, emptyQuoteSpec, quoteItems, quoteReminderText, quoteRequestText, quoteTotal, type QuoteSpec, type QuoteView } from '@/lib/quotes';
+import { LATE_REPLY_DAYS, daysUntilDeadline, emptyQuoteSpec, repliedLate, quoteItems, quoteReminderText, quoteRequestText, quoteTotal, type QuoteSpec, type QuoteView } from '@/lib/quotes';
 import { ProxyEntry } from './proxy-entry';
 import type { InquiryRecord } from '@/lib/types';
 import { shipperToQuoteSpec, shipperQuoteRows, shipperLeadRows } from '@/lib/shipper-quote';
@@ -40,14 +40,14 @@ export default function QuoteAdmin({inquiries,quotes,initialInquiry}:{inquiries:
       </fieldset>{error&&<p role="alert" className="field-error">{error}</p>}<p role="status">{message}</p><button className="button button-yellow" disabled={pending}>{pending?'저장 중…':'견적 요청 초안 저장'}</button></form></details>
     <section className="panel quote-comparison"><h2>동일 요청별 비교</h2><Link className="text-button" href={{pathname:'/admin/agreements',query:displayed[0]?{inquiry:displayed[0].inquiryId}:{}}}>이 상담의 전자계약 초안 만들기</Link><label className="form-field"><span>요청 묶음</span><select value={groupId||groups[0]||''} onChange={e=>setGroupId(e.target.value)}>{!groups.length&&<option value="">요청 없음</option>}{groups.map(id=>{const q=quotes.find(q=>q.groupId===id)!;return <option key={id} value={id}>상담 #{q.inquiryId} · {q.spec.item} · {q.createdAt.slice(0,10)} · {id.slice(0,8)}</option>;})}</select></label>
       <p>월 비용 = max(6개 항목 합계, 월 최소요금) + 월 별도 비용. 부가세 포함·별도 견적은 같은 기준으로 재확인하세요. 추가 할증·피크 비용은 회신 조건을 확인합니다.</p>
-      <div className="table-scroll"><table className="data-table"><thead><tr><th>업체</th><th>진행</th><th>수용</th><th>월 비용</th><th>첫 달 비용</th><th>부가세</th><th>검토 사항</th></tr></thead><tbody>{displayed.map(q=>{const total=quoteTotal(q.spec,q.response);const money=(v:number|null)=>v===null?'확인 필요':`${v.toLocaleString('ko-KR')}원`;return <tr key={q.id}><td>{q.partnerName}</td><td>{q.state}{q.response?.source==='담당자 정리'&&<small>담당자 정리</small>}{!q.response&&q.state!=='종결'&&<small>{dueLabel(q.spec.deadline)}</small>}</td><td>{q.response?.availability??'미회신'}</td><td>{money(total.monthly)}</td><td>{money(total.firstMonth)}</td><td>{q.response?.vat??'확인 필요'}</td><td>{total.reason}<small>{q.response?.note}</small></td></tr>;})}</tbody></table></div>
+      <div className="table-scroll"><table className="data-table"><thead><tr><th>업체</th><th>진행</th><th>수용</th><th>월 비용</th><th>첫 달 비용</th><th>부가세</th><th>검토 사항</th></tr></thead><tbody>{displayed.map(q=>{const total=quoteTotal(q.spec,q.response);const money=(v:number|null)=>v===null?'확인 필요':`${v.toLocaleString('ko-KR')}원`;return <tr key={q.id}><td>{q.partnerName}</td><td>{q.state}{q.response?.source==='담당자 정리'&&<small>담당자 정리</small>}{q.response&&repliedLate(q.spec.deadline,q.repliedAt)&&<small>기한 후 회신</small>}{!q.response&&q.state!=='종결'&&<small>{dueLabel(q.spec.deadline)}</small>}</td><td>{q.response?.availability??'미회신'}</td><td>{money(total.monthly)}</td><td>{money(total.firstMonth)}</td><td>{q.response?.vat??'확인 필요'}</td><td>{total.reason}<small>{q.response?.note}</small></td></tr>;})}</tbody></table></div>
       {!displayed.length&&<p>화주 상담을 선택해 첫 견적 요청을 만드세요.</p>}
     </section>
     {displayed.length>0&&<ReportAdmin key={displayed[0].groupId} groupId={displayed[0].groupId} version={displayed.map(q=>q.revision).join()} quotes={displayed.map(q=>({id:q.id,partnerName:q.partnerName}))}/>}
     {displayed.map(q=><QuoteCard key={q.id} quote={q}/>)}
   </div>;
 }
-const dueLabel=(deadline:string)=>{const d=daysUntilDeadline(deadline);return d===null?'기한 확인 필요':d>0?`D-${d}`:d===0?'오늘 마감':`기한 ${-d}일 경과`;};
+const dueLabel=(deadline:string)=>{const d=daysUntilDeadline(deadline);return d===null?'기한 확인 필요':d>0?`D-${d}`:d===0?'오늘 마감':d>=-LATE_REPLY_DAYS?`기한 ${-d}일 경과 · 링크 회신 가능`:`기한 ${-d}일 경과 · 링크 만료`;};
 function QuoteCard({quote:q}:{quote:QuoteView}) {
   const router=useRouter(); const [view,setView]=useState(q); const [link,setLink]=useState(''); const [delivery,setDelivery]=useState('');const [error,setError]=useState('');const [message,setMessage]=useState('');const [pending,setPending]=useState(false);const busy=useRef(false);
   const [previous,setPrevious]=useState(q);

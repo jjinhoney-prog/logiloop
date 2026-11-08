@@ -51,3 +51,36 @@ test('late partner quote in its own format → admin standard entry → shipper 
   expect(body).toContain('1800000');
   for (const secret of ['비밀단서', '늦은물류_견적서', '담당자 정리', '정리 비공개 화주']) expect(body).not.toContain(secret);
 });
+
+test('partner can still reply on the standard form within 7 days after the deadline, marked as late', async ({ page, request }, testInfo) => {
+  test.setTimeout(90000); page.setDefaultTimeout(15000);
+  await page.setExtraHTTPHeaders({ 'x-forwarded-for': testInfo.project.name === 'mobile' ? '127.0.6.4' : '127.0.6.3' });
+  const { createHash } = await import('node:crypto');
+  const now = new Date().toISOString();
+  const past = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  const future = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+  await request.post(`${DB}/rest/v1/inquiries`, { data: { kind: 'consultation', tier: 1, company: '링크 화주', name: '화주', phone: '01011113333', item: '생활용품', region: '부산', region_detail: '강서구', temperature: '상온', volume: '', timing: '', note: '', source: '테스트', created_at: now, updated_at: now } });
+  const id = randomUUID(); const token = 'c'.repeat(64);
+  const spec = { item: '생활용품', region: '부산 강서구', temperature: '상온', start: '즉시', sku: '', peak: '', operations: '', deadline: past, quantities: ['100', '0', '1000', '0', '0', '0'], units: ['팔레트·월', '팔레트', '주문건', '건', '건', '건'] };
+  // 기존 방식으로 회신기한에 맞춰 만료되도록 발급된 링크
+  await request.post(`${DB}/rest/v1/quote_requests`, { data: [{ id, group_id: randomUUID(), inquiry_id: 1, partner_id: 98, partner_name: '링크 늦은 물류', spec, state: '전달 완료', revision: randomUUID(), access_hash: createHash('sha256').update(token).digest('hex'), expires_at: Date.parse(`${past}T23:59:59.999+09:00`), sent_at: now, delivery_note: '메일' }] });
+
+  await page.goto(`/quote/respond#${id}.${token}`);
+  await expect(page.getByRole('note')).toContainText('회신기한');
+  await page.getByLabel('가능 센터', { exact: true }).fill('강서 센터');
+  await page.getByLabel('수용 시작일', { exact: true }).fill('즉시');
+  await page.getByLabel('견적 유효기간', { exact: true }).fill(future);
+  await page.getByLabel(/^보관 단가/).fill('12000'); await page.getByLabel(/^출고 단가/).fill('600');
+  await page.getByLabel('월 최소요금 (6개 항목 합계 기준)').fill('0'); await page.getByLabel('월 별도 비용 합계').fill('0');
+  await page.getByLabel('부가세', { exact: true }).selectOption('별도');
+  await expect(page.getByText('1,800,000원').first()).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('late-supplier-form.png'), fullPage: true });
+  await page.getByRole('button', { name: '견적 회신 저장' }).click();
+  await expect(page.getByRole('status').filter({ hasText: '견적 회신을 저장했습니다.' })).toBeVisible();
+
+  await page.goto('/admin/login'); await page.getByLabel('비밀번호').fill('test-only-password'); await page.getByRole('button', { name: '로그인' }).click(); await expect(page).toHaveURL('/admin');
+  await page.goto('/admin/quotes');
+  const table = page.locator('section.quote-comparison');
+  await expect(table.getByText('기한 후 회신')).toBeVisible();
+  await expect(table.getByText('1,800,000원').first()).toBeVisible();
+});

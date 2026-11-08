@@ -42,3 +42,21 @@ test('deadline countdown uses Korea time and reminder accepts partner formats', 
   expect(text).toContain('경과');
   expect(text).toContain('귀사 견적서');
 });
+
+test('supplier replies must include VAT basis, minimum and rates for requested volume', async () => {
+  const { normalizeSupplierResponse, repliedLate } = await import('@/lib/quotes');
+  const spec = { ...emptyQuoteSpec(), quantities: ['100', '0', '1000', '', '0', '0'] };
+  const ok = { availability: '가능', center: '녹산', start: '즉시', rates: ['12000', '', '600', '', '', ''], minimum: '0', extra: '0', setup: '', vat: '별도', validUntil: '2099-01-01', note: '' };
+  expect(normalizeSupplierResponse(ok, spec).rates[0]).toBe('12000');
+  expect(() => normalizeSupplierResponse({ ...ok, vat: '확인 필요' }, spec)).toThrow(/부가세/);
+  expect(() => normalizeSupplierResponse({ ...ok, minimum: '' }, spec)).toThrow(/최소요금/);
+  expect(() => normalizeSupplierResponse({ ...ok, rates: ['12000', '', '', '', '', ''] }, spec)).toThrow(/출고/);
+  expect(normalizeSupplierResponse({ ...ok, availability: '불가', center: '', start: '', validUntil: '', vat: '확인 필요', minimum: '' }, spec).availability).toBe('불가');
+  expect(repliedLate('2026-11-05', '2026-11-05T14:00:00Z')).toBe(false);
+  expect(repliedLate('2026-11-05', '2026-11-05T15:30:00Z')).toBe(true);
+});
+test('supplier reply needs the monthly extra cost to show a comparable total', async () => {
+  const { normalizeSupplierResponse } = await import('@/lib/quotes');
+  const spec = { ...emptyQuoteSpec(), quantities: ['1', '0', '0', '0', '0', '0'] };
+  expect(() => normalizeSupplierResponse({ availability: '가능', center: 'c', start: 's', rates: ['1', '', '', '', '', ''], minimum: '0', extra: '', setup: '', vat: '별도', validUntil: '2099-01-01', note: '' }, spec)).toThrow(/별도 비용/);
+});

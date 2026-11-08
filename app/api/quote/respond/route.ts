@@ -1,5 +1,5 @@
 import { partnerBody, partnerJson } from '@/lib/partner-http';
-import { normalizeQuoteResponse } from '@/lib/quotes';
+import { normalizeSupplierResponse } from '@/lib/quotes';
 import { canReadQuote, patchQuote, QuoteConflict, quoteIdValid, readQuote, supplierQuoteView } from '@/lib/quote-store';
 export async function POST(request: Request) {
   const parsed = await partnerBody(request,'quote');
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (body.action === 'load') return partnerJson({ok:true,...supplierQuoteView(row)});
     if (body.revision !== row.revision) return partnerJson({error:'회신이 변경되었습니다. 입력 내용을 보관하고 최신 내용을 다시 불러오세요.'},409);
     let response;
-    try { response = normalizeQuoteResponse(body.response); }
+    try { response = normalizeSupplierResponse(body.response, row.spec); }
     catch(err) { return partnerJson({error:err instanceof Error ? err.message : '입력을 확인하세요.'},400); }
     const saved = await patchQuote(row,{response,state:'회신 완료',replied_at:new Date().toISOString()});
     return partnerJson({ok:true,...supplierQuoteView(saved)});

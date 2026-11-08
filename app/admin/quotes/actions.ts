@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { assertAdmin } from '@/lib/auth';
 import { getInquiries } from '@/lib/inquiries';
 import { readPartner } from '@/lib/partner-store';
-import { deadlinePassed, normalizeProxyResponse, normalizeQuoteSpec } from '@/lib/quotes';
+import { deadlinePassed, normalizeProxyResponse, normalizeQuoteSpec, replyWindowClosed } from '@/lib/quotes';
 import { insertQuotes, issueQuoteToken, patchQuote, quoteIdValid, quoteView, readQuote } from '@/lib/quote-store';
 import { createReport, issueReportToken, listGroupQuotes, patchReport, readReport, reportViewFor, settingsOf } from '@/lib/quote-report-store';
 import { normalizeSettings, reportStages } from '@/lib/quote-report';
@@ -38,7 +38,7 @@ export async function updateQuoteRequest(id: string, revision: string, action: '
       return {ok:true as const,view:result,token:result.token};
     }
     if (row.state === '종결') throw new Error('이미 종결된 요청입니다.');
-    if (action === 'sent' && (row.state !== '전달 준비' || deadlinePassed(row.spec.deadline))) throw new Error('유효한 회신 링크를 먼저 발급하세요.');
+    if (action === 'sent' && (row.state !== '전달 준비' || replyWindowClosed(row.spec.deadline))) throw new Error('유효한 회신 링크를 먼저 발급하세요.');
     if (action === 'sent' && (typeof deliveryNote !== 'string' || !deliveryNote.trim() || deliveryNote.length > 300)) throw new Error('전달 채널과 수신 담당자를 기록하세요.');
     const updated = await patchQuote(row,action === 'close' ? {state:'종결',access_hash:null,expires_at:null} : {state:'전달 완료',sent_at:new Date().toISOString(),delivery_note:deliveryNote.trim()});
     revalidatePath('/admin/quotes'); return {ok:true as const,view:quoteView(updated)};

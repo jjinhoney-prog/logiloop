@@ -25,6 +25,13 @@ const text = (v: unknown, max: number) => { if (typeof v !== 'string' || v.lengt
 const number = (v: unknown) => { const s = text(v, 15); if (s && (!/^\d{1,9}(\.\d{1,2})?$/.test(s) || !Number.isFinite(Number(s)))) throw new Error('수량·금액은 0 이상의 숫자로 입력하세요.'); return s; };
 export function validDate(s: string) { return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s; }
 export const deadlinePassed = (date: string, now = Date.now()) => !validDate(date) || now >= Date.parse(`${date}T23:59:59.999+09:00`);
+/** 회신기한이 지나도 업체가 표준 양식으로 직접 회신할 수 있는 기간(일). 늦은 회신은 '기한 후 회신'으로 표시한다. */
+export const LATE_REPLY_DAYS = 7;
+export const deadlineEnd = (date: string) => Date.parse(`${date}T23:59:59.999+09:00`);
+export const replyWindowEnd = (date: string) => deadlineEnd(date) + LATE_REPLY_DAYS * 86400000;
+export const replyWindowClosed = (date: string, now = Date.now()) => !validDate(date) || now >= replyWindowEnd(date);
+export const replyWindowLastDay = (date: string) => validDate(date) ? new Date(replyWindowEnd(date) + 9 * 3600000).toISOString().slice(0, 10) : '';
+export const repliedLate = (deadline: string, repliedAt?: string | null) => !!repliedAt && validDate(deadline) && Date.parse(repliedAt) > deadlineEnd(deadline);
 export function normalizeQuoteSpec(input: unknown): QuoteSpec {
   const v = object(input); const base = emptyQuoteSpec();
   for (const key of ['item','region','temperature','start','sku','peak','operations','deadline'] as const) base[key] = text(v[key], key === 'operations' ? 8000 : 200);
@@ -44,6 +51,16 @@ export function normalizeQuoteResponse(input: unknown): QuoteResponse {
   for (const key of ['minimum','extra','setup'] as const) result[key] = number(v[key]);
   return { ...result, source: '업체 회신' };
 }
+/** 업체가 링크로 직접 회신할 때는 비교에 꼭 필요한 값을 비워둘 수 없다. */
+export function normalizeSupplierResponse(input: unknown, spec: QuoteSpec): QuoteResponse {
+  const result = normalizeQuoteResponse(input);
+  if (result.availability === '불가') return result;
+  if (result.vat === '확인 필요') throw new Error('부가세 별도·포함 중 하나를 선택하세요.');
+  if (result.minimum === '' || result.extra === '') throw new Error('월 최소요금과 월 별도 비용을 입력하세요. 없으면 0을 입력합니다.');
+  const missing = quoteItems.filter((_, i) => spec.quantities[i] !== '' && Number(spec.quantities[i]) > 0 && result.rates[i] === '');
+  if (missing.length) throw new Error(`물량이 있는 항목의 단가를 입력하세요: ${missing.join('·')}. 제공하지 않는 항목은 '조건부'로 바꾸고 수용 조건에 적어 주세요.`);
+  return result;
+}
 /** 업체가 자체 양식(엑셀·PDF·카톡)으로 보낸 견적을 담당자가 표준 양식으로 옮긴다. 원문은 대조용으로 보관한다. */
 export function normalizeProxyResponse(input: unknown, now = new Date()): QuoteResponse {
   const v = object(input);
@@ -59,7 +76,7 @@ export function daysUntilDeadline(deadline: string, now = Date.now()) {
 }
 export function quoteReminderText(id: string, partnerName: string, spec: QuoteSpec, now = Date.now()) {
   const d = daysUntilDeadline(spec.deadline, now);
-  const due = d === null ? '회신기한 확인 필요' : d > 0 ? `회신기한 ${spec.deadline} (D-${d})` : d === 0 ? `회신기한 오늘(${spec.deadline})` : `회신기한 ${spec.deadline} 경과`;
+  const due = d === null ? '회신기한 확인 필요' : d > 0 ? `회신기한 ${spec.deadline} (D-${d})` : d === 0 ? `회신기한 오늘(${spec.deadline})` : `회신기한 ${spec.deadline} 경과 · 받은 링크로 ${replyWindowLastDay(spec.deadline)}까지 회신 가능`;
   return [`[로지루프] ${partnerName} 견적 회신 요청 · ${id.slice(0, 8).toUpperCase()}`, `${spec.region} · ${spec.temperature} · ${spec.item} 건입니다.`, due, '', '화주가 비교 검토를 기다리고 있습니다.', '보내드린 링크 입력이 어려우시면 귀사 견적서(엑셀·PDF·사진) 그대로 회신해 주셔도 됩니다.', '로지루프가 표준 비교표로 정리해 화주에게 전달합니다.', '', '꼭 필요한 항목: 보관·입고·출고·포장·택배·반품 단가 / 월 최소요금 / 초기비용 / 부가세 포함 여부 / 견적 유효기간'].join('\n');
 }
 /** Six item subtotal is subject to a monthly minimum; additional recurring charges are added after it. */

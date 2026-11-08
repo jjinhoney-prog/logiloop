@@ -10,7 +10,8 @@ async function respond(page: Page, link: string, future: string, rates: [string,
   await page.getByLabel('가능 센터', { exact: true }).fill('녹산 비공개센터');
   await page.getByLabel('수용 시작일', { exact: true }).fill('다음 달 1일');
   await page.getByLabel('견적 유효기간', { exact: true }).fill(future);
-  for (const [i, name] of ['보관', '입고', '출고'].entries()) await page.getByLabel(new RegExp(`^${name} 단가`)).fill(rates[i]);
+  // 입고는 이번 요청 물량이 0이라 '물량 없는 항목 · 선택'에 접혀 있다.
+  await page.getByLabel(/^보관 단가/).fill(rates[0]); await page.getByLabel(/^출고 단가/).fill(rates[2]);
   await page.getByLabel('월 최소요금 (6개 항목 합계 기준)').fill('0');
   await page.getByLabel('월 별도 비용 합계').fill('0');
   await page.getByLabel('초기 1회 비용').fill('0');
