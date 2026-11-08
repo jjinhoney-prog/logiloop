@@ -7,6 +7,8 @@ export const requestSituations: { id: string; title: string; description: string
   { id: 'space', title: '창고 공간이 필요해요', description: '지역·면적·시설 조건에 맞는 공간을 찾습니다.', tier: 1 },
   { id: 'rent-review', title: rentReviewTitle, description: '현재 임차 조건과 비교해 비용을 낮출 수 있는 후보를 검토합니다.', tier: 2 },
   { id: 'cold', title: '냉장·냉동 운영이 필요해요', description: '품목과 온도대에 맞는 공간·운영사를 검토합니다.', tier: 1 },
+  { id: 'urgent', title: '급하게 보관 공간이 필요해요', description: '입고 일정이 잡힌 단기·긴급 물량을 맡을 공간과 운영사를 찾습니다.', tier: 1 },
+  { id: 'contract', title: '정기 물류 계약을 검토해요', description: '장기 물량 기준으로 3PL 위탁과 창고 임차 조건을 비교합니다.', tier: 2 },
   { id: 'unsure', title: '어떤 방식이 맞을지 모르겠어요', description: '창고 임차와 물류 위탁부터 함께 검토합니다.', tier: 3 },
 ];
 
@@ -19,5 +21,7 @@ export const serviceSteps = [
 ];
 
 export const costNotice = '비용은 업무 범위 확인 후 안내합니다.';
-export const responseNotice = '담당자가 접수 내용을 확인한 뒤 남겨주신 연락처로 연락드립니다. 후보 안내 일정은 조건 확인 후 협의합니다.';
+// 대표 확정 운영 기준(2026-11-04). 화주 요청에만 쓰고, 값을 바꾸면 화면 문구가 함께 바뀐다.
+export const responseCommitment = '영업일 1일 내 연락';
+export const responseNotice = '접수 후 영업일 1일 내에 담당자가 남겨주신 연락처로 연락드립니다. 후보 안내 일정은 조건 확인 후 협의합니다.';
 export const disclosureOptions = ['담당자와 협의 후 결정', '시설·서비스 정보 공개 검토', '개별 화주 요청에 한해 정보 제공 검토'];

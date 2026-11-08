@@ -1524,3 +1524,56 @@ body:has(.partner-catalog),body:has(.partner-detail){background:#fff;}
 .partner-catalog .catalog-explainer[open] summary:after{content:'−';}
 .partner-catalog .catalog-explainer p{margin-bottom:16px;}
 @media(max-width:767px){.partner-detail .spec-grid>div:first-child,.partner-detail .spec-grid>div:last-child{grid-column:1/-1;}.partner-identity h1{font-size:23px;word-break:keep-all;}}
+
+/* 비용 비교 도구 · 계약 갱신 점검 */
+.home-renewal{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px;margin-top:32px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.home-renewal h2{margin:0 0 6px;font-size:22px}
+.home-renewal p{margin:0;color:var(--muted);font-size:14px}
+.preview-tool-link{display:flex;width:fit-content;margin:16px 0 4px;white-space:normal}
+.cost-tool{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:24px;align-items:start}
+.cost-form{min-width:0}
+.cost-form fieldset{border:0;padding:0;margin:0;min-width:0}
+.cost-form legend{padding:0;font-size:13px;font-weight:700}
+.cost-period{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px!important}
+.cost-period legend{width:100%;margin-bottom:8px}
+.cost-period label{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:14px;cursor:pointer}
+.cost-period label.checked{border-color:var(--dark);background:var(--yellow);font-weight:700}
+.cost-period input{position:absolute;opacity:0;width:1px;height:1px}
+.cost-period label:focus-within{outline:2px solid var(--dark);outline-offset:2px}
+.cost-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cost-columns>section{min-width:0;padding:24px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.cost-columns h2{margin:0 0 16px;font-size:20px}
+.cost-group+.cost-group{margin-top:24px!important}
+.cost-group legend{margin-bottom:12px;color:var(--muted)}
+.cost-group .form-field{margin-bottom:14px}
+.cost-group small{color:var(--muted);font-size:12px}
+.cost-input{position:relative}
+.cost-input input{padding-right:48px;font-size:16px;text-align:right}
+.cost-input em{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;font-size:13px;color:var(--muted)}
+.cost-result{position:sticky;top:88px;padding:24px;border-radius:16px;background:#fff;border:1px solid var(--dark)}
+.cost-result h2{margin:0 0 16px;font-size:20px}
+.cost-result dl{margin:0 0 16px}
+.cost-result dl>div{padding:12px 0;border-top:1px solid var(--line)}
+.cost-result dt{font-size:13px;color:var(--muted)}
+.cost-result dd{margin:2px 0;font-size:24px;font-weight:700}
+.cost-result small{font-size:12px;color:var(--muted)}
+.cost-verdict{padding:12px 14px;border-radius:8px;background:var(--brand-soft);font-size:14px;font-weight:600}
+.cost-missing{font-size:13px}
+.cost-missing strong{display:block}
+.cost-result .button{width:100%;margin-top:4px;white-space:normal}
+.cost-note{margin:14px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}
+.renewal-progress{margin:0 0 12px;font-size:14px}
+.renewal-progress strong{font-size:22px}
+.renewal-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.renewal-groups fieldset{min-width:0;margin:0;padding:20px 24px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.renewal-groups legend{padding:0 6px;font-size:14px;font-weight:700}
+.renewal-groups label{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding:8px 0;font-size:14px;line-height:1.5;cursor:pointer}
+.renewal-groups input{flex:none;width:18px;height:18px;margin:2px 0 0;accent-color:var(--dark)}
+.renewal-tool-link{margin:16px 0 0;font-size:14px}
+.renewal-tool-link a{text-decoration:underline;text-underline-offset:4px;font-weight:600}
+.renewal-option{display:flex;flex-direction:column;margin-bottom:0}
+.renewal-option h3{margin:0 0 6px;font-size:18px}
+.renewal-option p{flex:1;margin:0 0 16px;font-size:14px;color:var(--muted)}
+.renewal-note{margin:16px 0 0;font-size:13px;color:var(--muted)}
+@media(max-width:1023px){.cost-tool{grid-template-columns:1fr}.cost-result{position:static}.renewal-page .three-cols{grid-template-columns:1fr}}
+@media(max-width:767px){.home-renewal{flex-direction:column;align-items:flex-start;padding:20px}.cost-columns,.renewal-groups{grid-template-columns:1fr}.preview-tool-link{width:100%}}

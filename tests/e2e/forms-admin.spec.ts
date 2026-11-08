@@ -90,7 +90,7 @@ test.describe('consultation form', () => {
 
     const dialog = page.getByRole('dialog', { name: '접수되었습니다.' });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('담당자가 접수 내용을 확인한 뒤 남겨주신 연락처로 연락드립니다.');
+    await expect(dialog).toContainText('접수 후 영업일 1일 내에 담당자가 남겨주신 연락처로 연락드립니다.');
     expect(posted).toMatchObject({ company: '예시 회사', tier: 2, partnership: false, targets: ['busan-01'], website: '', consent: true });
 
     await dialog.getByRole('button', { name: '확인' }).click();

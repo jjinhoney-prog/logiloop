@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Truck, Warehouse, type LucideIcon } from 'lucide-react';
-import { costNotice, responseNotice } from '@/lib/service-content';
+import { costNotice, responseCommitment, responseNotice } from '@/lib/service-content';
 import { ServicePreview, ServiceSteps } from './service-preview';
 import { HomeMotion } from './home-motion';
 
@@ -27,7 +27,7 @@ export default function Home() {
             <Link className="button button-dark hero-consultation" data-funnel-placement="hero" href="/consultation">물류사·창고 찾기 요청<ArrowRight size={17} /></Link>
             <Link className="text-button" href="#comparison-preview">후보 비교표 예시 보기</Link>
           </div>
-          <p className="home-request-note">정해지지 않은 조건은 미정으로 남겨도 됩니다.</p>
+          <p className="home-request-note">정해지지 않은 조건은 미정으로 남겨도 됩니다. 접수 후 {responseCommitment}.</p>
           <div className="hero-partner-entry">
             <span>3PL·물류사를 운영하시나요?</span>
             <Link href="/partnership">3PL 업체 등록<ArrowRight size={15} /></Link>
@@ -46,6 +46,8 @@ export default function Home() {
             ))}
           </div>
           <div className="problem-more">
+            <Link data-funnel-placement="situation" href="/consultation?situation=urgent">급하게 공간이 필요해요<ArrowRight size={14} /></Link>
+            <Link data-funnel-placement="situation" href="/consultation?situation=contract">정기 계약을 검토해요<ArrowRight size={14} /></Link>
             <Link data-funnel-placement="situation" href="/consultation?situation=unsure">어떤 방식이 맞는지 모르겠어요<ArrowRight size={14} /></Link>
           </div>
         </div>
@@ -54,6 +56,15 @@ export default function Home() {
       <section className="home-results" aria-labelledby="results-title">
         <h2 id="results-title">요청한 조건이, 선택할 수 있는 비교표가 됩니다.</h2>
         <ServiceSteps />
+      </section>
+
+      <section className="home-renewal" aria-labelledby="renewal-title">
+        <div>
+          <span className="eyebrow">계약 갱신 시즌</span>
+          <h2 id="renewal-title">2027년 물류 계약, 갱신 전에 점검하세요.</h2>
+          <p>3PL 위탁이나 창고 임차 계약이 만료를 앞두고 있다면 통지 기한과 비용 항목부터 확인합니다.</p>
+        </div>
+        <Link className="button button-outline" href="/contract-renewal">갱신 점검표 보기<ArrowRight size={17} /></Link>
       </section>
 
       <ServicePreview compact />
@@ -78,7 +89,7 @@ export default function Home() {
 
       <section className="home-final-request">
         <h2>지역과 조건을 알려주세요.<br />맞는 후보를 찾는 일부터 함께합니다.</h2>
-        <p>전국 어디든 요청 가능 · 미정인 조건은 담당자와 정리</p>
+        <p>전국 어디든 요청 가능 · 미정인 조건은 담당자와 정리 · 접수 후 {responseCommitment}</p>
         <Link className="button button-dark" data-funnel-placement="bottom" href="/consultation">물류사·창고 찾기 요청<ArrowRight size={17} /></Link>
       </section>
 

@@ -197,7 +197,7 @@ export default function InquiryForm({
       />
       {step === 1 && <div className="request-promises" aria-label="신청 전 안내">
         <div><strong>{partnership ? '참여 후 진행' : '받게 될 도움'}</strong><p>{partnership ? '정보 확인 → 공개 범위 협의 → 등록·화주 요청 검토' : '요구조건 요약 · 후보 검토 · 협의한 범위의 비교 자료'}</p></div>
-        <div><strong>연락과 진행 일정</strong><p>{partnership ? '접수 확인 후 연락드립니다. 등록 일정은 정보 확인 후 협의합니다.' : '접수 확인 후 연락드립니다. 후보 안내 일정은 조건 확인 후 협의합니다.'}</p></div>
+        <div><strong>연락과 진행 일정</strong><p>{partnership ? '접수 확인 후 연락드립니다. 등록 일정은 정보 확인 후 협의합니다.' : responseNotice}</p></div>
         <div><strong>{partnership ? '공개 범위와 비용' : '비용 안내'}</strong><p>{partnership ? '공개 범위를 협의하고 등록·홍보·거래 비용을 구분해 안내합니다.' : costNotice}</p></div>
       </div>}
       {targetItems.length > 0 && <div className="target-summary request-targets"><strong>함께 검토할 후보</strong>{targetItems.map((i) => <span key={i.id}>{i.name}</span>)}<Link href="/compare">비교함에서 다시 선택</Link></div>}

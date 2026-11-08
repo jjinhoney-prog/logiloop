@@ -8,7 +8,7 @@ import { warehouseRegions, warehouseRegionHref } from '@/lib/warehouse-regions';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const paths = ['/', '/about', '/warehouses', '/partners', '/partnership', '/insights'];
+  const paths = ['/', '/about', '/warehouses', '/partners', '/partnership', '/insights', '/contract-renewal', '/cost-compare'];
   const listings = isDbConfigured() ? await getPublicListings() : [];
   return [
     ...paths,

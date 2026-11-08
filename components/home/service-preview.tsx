@@ -49,6 +49,7 @@ export function ServicePreview({ compact = false }: { compact?: boolean }) {
         </div>
       } />
       <p className="preview-note">실제 후보의 수용 가능 여부와 견적은 요청 조건 확인 후 검토합니다. 미확인 항목은 ‘확인 필요’로 남깁니다.</p>
+      <Link className="button button-outline preview-tool-link" href="/cost-compare">우리 회사 비용으로 위탁·임차 비교하기<ArrowRight size={17} /></Link>
       <Link className="text-button preview-detail-link" href="/about#comparison-preview">가상 상황과 판단 근거 자세히 보기<ArrowRight size={15} /></Link>
     </section>
   );

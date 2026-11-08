@@ -121,3 +121,35 @@ test('home motion respects reduced motion and leaves content readable', async ({
   await expect(page.locator('.hero-consultation')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('home-motion.png'), fullPage: true });
 });
+
+test('cost comparison holds the verdict until every cost is known', async ({ page }) => {
+  await page.goto('/cost-compare');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('같은 기간으로 비교');
+  await page.getByLabel('월 보관비').fill('100');
+  await page.getByLabel('월 임차료').fill('80');
+  await expect(page.locator('.cost-missing')).toContainText('확인 필요');
+  await expect(page.locator('.cost-verdict')).toHaveCount(0);
+  for (const [label, value] of [['월 입출고·작업비', '50'], ['월 기타 비용', '0'], ['초기 이관비', '100'], ['월 관리비', '10'], ['월 인건비', '30'], ['월 장비·시스템비', '0'], ['초기 입주·설비비', '500'], ['종료 시 원상복구비', '100']]) await page.getByLabel(label).fill(value);
+  await expect(page.locator('.cost-verdict')).toContainText('창고 임차의 합계가 220만원 낮습니다');
+  await expect(page.locator('.cost-verdict')).toContainText('17개월부터 합계가 낮아집니다');
+  await expect(page.locator('.cost-result dl')).toContainText('초기 500만원 · 종료 100만원');
+  // 월 비용 차이 30, 일회성 비용 차이 600 → 20개월 동률, 21개월부터 낮아짐
+  await page.getByLabel('월 보관비').fill('140');
+  await page.getByLabel('월 입출고·작업비').fill('0');
+  await page.getByLabel('초기 이관비').fill('0');
+  await page.getByLabel('월 인건비').fill('20');
+  await expect(page.locator('.cost-verdict')).toContainText('20개월에 합계가 같아지고 21개월부터 낮아집니다');
+  await page.getByLabel('월 기타 비용').pressSequentially('12.5');
+  await expect(page.getByLabel('월 기타 비용')).toHaveValue('12.5');
+  await expect(page.locator('.cost-result dl')).toContainText('월 152.5만원');
+  await page.getByRole('link', { name: '실제 후보와 비교 요청하기' }).click();
+  await expect(page).toHaveURL(/situation=unsure/);
+});
+
+test('contract renewal page reaches the request with its context', async ({ page }) => {
+  await page.goto('/contract-renewal');
+  await page.getByLabel('계약 만료일과 갱신·해지 통지 기한을 확인했습니다.').check();
+  await expect(page.locator('.renewal-progress')).toContainText('1 / 12');
+  await page.getByRole('link', { name: '물류사 비교 요청' }).click();
+  await expect(page).toHaveURL(/situation=change/);
+});
