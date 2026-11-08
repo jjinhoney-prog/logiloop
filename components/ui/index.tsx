@@ -1,21 +1,22 @@
 import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, Clock3, Truck, Warehouse } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Truck, Warehouse } from 'lucide-react';
 import { capacityLabel, isExampleListing, listingHref, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
 
-export function PageHeading({ eyebrow, title, description, children }: { eyebrow: string; title: string; description?: string; children?: ReactNode }) {
+export function PageHeading({ eyebrow, title, description, audience, children }: { eyebrow: string; title: string; description?: string; audience?: string; children?: ReactNode }) {
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
+        {audience && <p className="page-audience">{audience}</p>}
         {description && <p>{description}</p>}
       </div>
-      {children}
+      {children && <div className="heading-actions">{children}</div>}
     </div>
   );
 }
@@ -64,11 +65,11 @@ export function CatalogCard({ item }: { item: Listing }) {
   const Icon = warehouse ? Warehouse : Truck;
   return (
     <article className="catalog-card">
-      <div className={`card-cover temp-${temperatureTone(item.temperature)}${item.imageUrl ? ' card-cover-photo' : ''}`}>
+      <div className={`card-cover temp-${temperatureTone(item.temperature)}${item.imageUrl ? warehouse ? ' card-cover-photo' : ' card-cover-logo' : ''}`}>
         {item.imageUrl && (
           // 지음 홈페이지 원본 사진을 그대로 쓴다(Vercel 이미지 최적화 사용량을 쓰지 않음).
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="cover-image" src={item.imageUrl} alt={`${item.name} 외관 사진`} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+          <img className="cover-image" src={item.imageUrl} alt={`${item.name} ${warehouse ? '외관 사진' : '로고'}`} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
         )}
         <div className="cover-top">
           <TypeBadge type={item.type} />
@@ -99,15 +100,9 @@ export function CatalogCard({ item }: { item: Listing }) {
             <span key={tag}>{tag}</span>
           ))}
         </div>
-        <div className="card-meta">
-          <strong>{item.price}</strong>
-          <small>{item.available}</small>
-        </div>
+        <p className="card-service">{warehouse ? `입주 시점: ${item.available}` : item.service}</p>
         <div className="card-footer">
-          <span>
-            <Clock3 size={13} />
-            {item.status}
-          </span>
+          <strong className="card-price">{item.price}</strong>
           <CompareToggle id={item.id} />
         </div>
       </div>

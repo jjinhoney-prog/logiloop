@@ -1,10 +1,14 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { PageHeading } from '@/components/ui';
 import { articles } from '@/lib/data';
 
-export const metadata: Metadata = { title: '물류 가이드' };
+export const metadata = pageMetadata(
+  '창고 임대·3PL 비교 가이드',
+  '창고 재계약, 공장 외부 보관, 직접 임차와 3PL 위탁을 검토할 때 필요한 질문을 정리했습니다. 면적·시설·총비용·이전 부담을 같은 기준으로 비교하세요.',
+  '/insights',
+);
 
 export default function Page() {
   return (
@@ -23,7 +27,7 @@ export default function Page() {
             <br />
             운영방식을 고르기 전 확인할 항목을 살펴보세요.
           </p>
-          <Link className="button button-lime" href="/insights/lease-or-3pl">
+          <Link className="button button-yellow" href="/insights/lease-or-3pl">
             운영방식 가이드 읽기
             <ArrowRight size={17} />
           </Link>

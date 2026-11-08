@@ -1,0 +1,11 @@
+import {expect,test,vi} from 'vitest';
+vi.mock('@/lib/supabase',()=>({db:()=>({})}));
+import {agreementAccess,agreementHash,agreementSignerView,signAgreement,type AgreementRow} from '../../lib/agreement-store';
+import {hashPartnerToken} from '../../lib/partner-document';
+const token='a'.repeat(64);
+const document={title:'검토 문안',kind:'물류대행',body:'검토한 실제 계약 조건',parties:[{company:'화주',representative:'갑',email:'a@example.com'},{company:'물류사',representative:'을',email:'b@example.com'}] as [{company:string;representative:string;email:string},{company:string;representative:string;email:string}]};
+const row:AgreementRow={id:'a',inquiry_id:1,document,document_hash:agreementHash(document),state:'sent',revision:'r',signatures:[null,null],access_hashes:[hashPartnerToken(token),'b'.repeat(64)],expires_at:Date.now()+60000,verification_note:'비공개 검토',created_at:'',updated_at:''};
+test('party capability, expiry, state and DTO isolation',()=>{expect(agreementAccess(row,0,token)).toBe(true);expect(agreementAccess(row,1,token)).toBe(false);expect(agreementAccess({...row,state:'void'},0,token)).toBe(false);expect(agreementAccess({...row,expires_at:1},0,token)).toBe(false);expect(agreementSignerView(row,0)).not.toHaveProperty('access_hashes');expect(agreementSignerView(row,0)).not.toHaveProperty('verification_note');});
+test('signatures bind immutable document hash and complete only after both parties',()=>{expect(()=>signAgreement(row,0,'갑','wrong',true)).toThrow();expect(()=>signAgreement(row,0,'갑',row.document_hash,false)).toThrow();expect(()=>signAgreement({...row,document:{...document,body:'변경'}},0,'갑',row.document_hash,true)).toThrow();const first={...row,...signAgreement(row,0,'갑',row.document_hash,true)};expect(first.state).toBe('sent');expect(()=>signAgreement(first,0,'갑',row.document_hash,true)).toThrow();expect(signAgreement(first,1,'을',row.document_hash,true).state).toBe('completed');});
+
+test('external records cannot use native signing capabilities',()=>{const external={...row,external_agreement:{provider:'modusign' as const,documentUrl:'https://app.modusign.co.kr/documents/test',status:'서명 요청' as const,evidenceUrl:'',note:'확인 기록',checkedAt:new Date().toISOString(),history:[]}};expect(agreementAccess(external,0,token)).toBe(false);expect(()=>signAgreement(external,0,'갑',row.document_hash,true)).toThrow();});

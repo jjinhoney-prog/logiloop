@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: '운영 워크스페이스' };
 export default async function Page(props: PageProps<'/admin'>) {
   await requireAdmin();
   const { tab } = await props.searchParams;
-  const initialTab: AdminTab = tab === 'listings' ? 'listings' : 'inquiries';
+  const initialTab: AdminTab = tab === 'partners' ? 'partners' : tab === 'listings' ? 'listings' : 'inquiries';
   if (!isDbConfigured()) return <Admin dbReady={false} inquiries={[]} listings={[]} initialTab={initialTab} />;
   const [inquiries, listings] = await Promise.all([getInquiries(), getAdminListings()]);
   return <Admin dbReady inquiries={inquiries} listings={listings} initialTab={initialTab} />;

@@ -1,150 +1,105 @@
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, Check, MapPin, Search, SlidersHorizontal, Workflow } from 'lucide-react';
-import { CatalogCard, DemoNotice, SectionTitle } from '@/components/ui';
-import { articles, isExampleListing, tiers } from '@/lib/data';
-import type { Listing, TierIcon } from '@/lib/types';
+import { ArrowRight, Truck, Warehouse, type LucideIcon } from 'lucide-react';
+import { costNotice, responseCommitment, responseNotice } from '@/lib/service-content';
+import { ServicePreview, ServiceSteps } from './service-preview';
+import { HomeMotion } from './home-motion';
 
-const icons: Record<TierIcon, typeof Search> = { Search, SlidersHorizontal, Workflow };
-
-const nationalRegions = ['수도권', '강원권', '충청권', '호남권', '영남권', '제주권'];
-
-const processSteps = [
-  ['01', '간편 신청'],
-  ['02', '요구조건 확인'],
-  ['03', '후보·견적 확인'],
-  ['04', '비교 결과 안내'],
+const purposes: { id: string; title: string; hint: string; icon: LucideIcon }[] = [
+  { id: 'outsource', title: '물류를 맡길 곳이 필요해요', hint: '보관·입출고를 맡길 물류사 찾기', icon: Truck },
+  { id: 'space', title: '직접 사용할 창고가 필요해요', hint: '지역·면적·시설에 맞는 공간 찾기', icon: Warehouse },
 ];
 
-export default function Home({ listings }: { listings: Listing[] }) {
+const faqs = [
+  ['조건이 정해지지 않아도 요청할 수 있나요?', '네. 품목·물량·지역·온도·시점은 미정으로 남길 수 있습니다. 회사명·담당자·연락처를 남겨주시면 필요한 조건부터 확인합니다.'],
+  ['전국 어느 지역이든 요청할 수 있나요?', '네. 희망 지역을 알려주시면 창고·물류사 후보를 검토합니다. 여러 지역을 함께 검토할 수 있으며, 후보별 최신 조건과 수용 가능 여부는 별도로 확인합니다.'],
+  ['요청 후 진행과 비용은 어떻게 되나요?', `${responseNotice} ${costNotice}`],
+];
+
+export default function Home() {
   return (
-    <div className="page home-page">
-      <div className="home-intro">
-        <div>
-          <div className="eyebrow">
-            <span className="accent-line" />
-            전국 물류거점 상담 플랫폼
+    <HomeMotion><div className="page home-page home-focused">
+      <section className="home-intro home-hero" aria-labelledby="home-title">
+        <div className="home-hero-copy">
+          <div className="eyebrow"><span className="accent-line" />전국 물류사·창고 매칭 · 로지루프 by 지음</div>
+          <h1 id="home-title">로지루프에서 우리 회사에 맞는<br /><span>물류사와 창고를 찾으세요.</span></h1>
+          <p>물류를 맡길 운영사가 필요한가요, 직접 사용할 창고가 필요한가요? 로지루프 담당자가 조건을 정리하고, 후보별 비용과 운영 조건을 비교해 드립니다.</p>
+          <div className="hero-actions">
+            <Link className="button button-dark hero-consultation" data-funnel-placement="hero" href="/consultation">물류사·창고 찾기 요청<ArrowRight size={17} /></Link>
+            <Link className="text-button" href="#comparison-preview">후보 비교표 예시 보기</Link>
           </div>
-          <h1>
-            전국을 잇는 물류,
-            <br />
-            <span>조건부터 함께.</span>
-          </h1>
-          <p>
-            물류사만 비교하실 수도, 창고를 빌릴지부터 보실 수도 있습니다.
-            <br className="desktop-break" />
-            원하는 지역과 조건을 정리하고, 우리 회사의 다음 거점을 준비하세요.
-          </p>
-          <Link className="button button-dark hero-consultation" href="/consultation">상담 신청하기<ArrowRight size={17} /></Link>
+          <p className="home-request-note">정해지지 않은 조건은 미정으로 남겨도 됩니다. 접수 후 {responseCommitment}.</p>
+          <div className="hero-partner-entry">
+            <span>3PL·물류사를 운영하시나요?</span>
+            <Link href="/partnership">3PL 업체 등록<ArrowRight size={15} /></Link>
+          </div>
         </div>
-        <div className="coverage-panel national-coverage">
-          <div className="coverage-heading">
-            <MapPin size={16} />
-            NATIONWIDE VISION
-          </div>
-          <h2>
-            전국을 연결하는
-            <br />
-            물류 네트워크를 향해.
-          </h2>
-          <div className="national-regions">
-            {nationalRegions.map((region) => (
-              <span key={region}>{region}</span>
-            ))}
-          </div>
-          <div className="coverage-caption">전국망 구축 목표 · 권역별 공급 확보 예정</div>
-        </div>
-      </div>
 
-      <SectionTitle index="01" title="어떤 도움이 필요하신가요?" />
-      <div className="tier-grid">
-        {tiers.map((tier) => {
-          const Icon = icons[tier.icon];
-          return (
-            <Link className={`tier-card tier-${tier.id}`} href={`/consultation?tier=${tier.id}`} key={tier.id}>
-              <div className="tier-card-top">
-                <span className="tier-icon">
-                  <Icon size={24} />
-                </span>
-                <span className="tier-number">0{tier.id}</span>
-              </div>
-              <p className="tier-eyebrow">{tier.eyebrow}</p>
-              <h2>
-                {tier.name}
-                <ArrowUpRight size={22} />
-              </h2>
-              <p className="tier-description">{tier.description}</p>
-              <div className="tier-result">
-                <Check size={14} />
-                {tier.result}
-              </div>
-              <div className="tier-price">
-                {tier.price}
-                <ArrowRight size={18} />
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="process-strip">
-        <strong>
-          한 번의 조건 정리,
-          <br />
-          <span>필요한 만큼의 비교.</span>
-        </strong>
-        {processSteps.map(([n, title]) => (
-          <div key={n}>
-            <span>{n}</span>
-            {title}
-          </div>
-        ))}
-        <Link href="/about" aria-label="상담 과정 자세히 보기">
-          <ArrowUpRight size={22} />
-        </Link>
-      </div>
-
-      <SectionTitle index="02" title="다음 물류거점의 조건을 살펴보세요" href="/warehouses" />
-      <DemoNotice>
-        {listings.every(isExampleListing)
-          ? '현재는 부울경의 가상 예시를 제공합니다. 전국 지역을 선택할 수 있으며, 권역별 공급 자료는 확보 후 등록합니다.'
-          : '지음부동산중개법인 등록 매물과 화면 확인용 예시를 함께 보여 줍니다. 조건은 상담 시 다시 확인합니다.'}
-      </DemoNotice>
-      <div className="catalog-grid home-catalog">
-        {listings.map((item) => (
-          <CatalogCard key={item.id} item={item} />
-        ))}
-      </div>
-
-      <div className="home-bottom">
-        <div>
-          <SectionTitle index="03" title="결정 전에 읽어보세요" href="/insights" />
-          <div className="article-list">
-            {articles.slice(0, 2).map((article, i) => (
-              <Link href={`/insights/${article.id}`} key={article.id}>
-                <span className="article-index">0{i + 1}</span>
-                <div>
-                  <small>{article.category}</small>
-                  <h3>{article.title}</h3>
-                </div>
-                <ArrowUpRight size={22} />
+        <div className="problem-picker" role="group" aria-labelledby="problem-title">
+          <h2 id="problem-title">지금 필요한 것은 무엇인가요?</h2>
+          <div className="problem-options">
+            {purposes.map(({ id, title, hint, icon: Icon }) => (
+              <Link className="problem-option" data-funnel-placement="situation" href={`/consultation?situation=${id}`} key={id}>
+                <Icon size={22} aria-hidden="true" />
+                <strong>{title}</strong>
+                <span>{hint}</span>
               </Link>
             ))}
           </div>
+          <div className="problem-more">
+            <Link data-funnel-placement="situation" href="/consultation?situation=urgent">급하게 공간이 필요해요<ArrowRight size={14} /></Link>
+            <Link data-funnel-placement="situation" href="/consultation?situation=contract">정기 계약을 검토해요<ArrowRight size={14} /></Link>
+            <Link data-funnel-placement="situation" href="/consultation?situation=unsure">어떤 방식이 맞는지 모르겠어요<ArrowRight size={14} /></Link>
+          </div>
         </div>
-        <div className="help-card">
-          <span className="eyebrow">NOT SURE YET?</span>
-          <h2>
-            조건이 아직
-            <br />
-            정해지지 않아도 괜찮습니다.
-          </h2>
-          <p>품목과 대략적인 물량부터 시작해 보세요.</p>
-          <Link href="/consultation">
-            내 조건 정리하기
-            <ArrowRight size={18} />
-          </Link>
+      </section>
+
+      <section className="home-results" aria-labelledby="results-title">
+        <h2 id="results-title">요청한 조건이, 선택할 수 있는 비교표가 됩니다.</h2>
+        <ServiceSteps />
+      </section>
+
+      <section className="home-renewal" aria-labelledby="renewal-title">
+        <div>
+          <span className="eyebrow">계약 갱신 시즌</span>
+          <h2 id="renewal-title">2027년 물류 계약, 갱신 전에 점검하세요.</h2>
+          <p>3PL 위탁이나 창고 임차 계약이 만료를 앞두고 있다면 통지 기한과 비용 항목부터 확인합니다.</p>
         </div>
-      </div>
-    </div>
+        <Link className="button button-outline" href="/contract-renewal">갱신 점검표 보기<ArrowRight size={17} /></Link>
+      </section>
+
+      <ServicePreview compact />
+
+      <section className="home-trust" aria-labelledby="trust-title">
+        <div>
+          <h2 id="trust-title">지음의 담당자가 검토하고 연결합니다.</h2>
+          <p>로지루프는 지음부동산중개법인이 운영하는 물류 매칭 서비스입니다. 담당자가 요구조건을 정리하고 후보별 확인 사항을 비교해 드립니다.</p>
+          <Link className="text-button" href="/about">서비스 범위 자세히 보기<ArrowRight size={15} /></Link>
+        </div>
+        <dl className="home-roles">
+          <div><dt>조건 정리·후보 비교</dt><dd>로지루프</dd></div>
+          <div><dt>공간 거래 중개</dt><dd>지음부동산중개법인</dd></div>
+          <div><dt>물류 운영·공간 제공</dt><dd>계약한 물류사·임대인</dd></div>
+        </dl>
+      </section>
+
+      <section className="home-faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">요청 전에 확인하세요.</h2>
+        <div className="faq-list">{faqs.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
+      </section>
+
+      <section className="home-final-request">
+        <h2>지역과 조건을 알려주세요.<br />맞는 후보를 찾는 일부터 함께합니다.</h2>
+        <p>전국 어디든 요청 가능 · 미정인 조건은 담당자와 정리 · 접수 후 {responseCommitment}</p>
+        <Link className="button button-dark" data-funnel-placement="bottom" href="/consultation">물류사·창고 찾기 요청<ArrowRight size={17} /></Link>
+      </section>
+
+      <section className="home-supplier" aria-labelledby="supplier-title">
+        <div>
+          <h2 id="supplier-title">물류사·창고주이신가요?</h2>
+          <p>시설과 서비스를 등록하고 조건이 맞는 화주 요청을 받아보세요. 전국 파트너의 참여를 받으며, 공개 범위는 등록 전에 협의합니다.</p>
+        </div>
+        <Link className="button button-yellow" href="/partnership">3PL·창고 파트너 등록<ArrowRight size={17} /></Link>
+      </section>
+    </div></HomeMotion>
   );
 }

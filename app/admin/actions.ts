@@ -7,7 +7,8 @@ import { assertAdmin, endSession, isAuthConfigured, loginLimiter, startSession }
 import { inquiryStages } from '@/lib/data';
 import { updateInquiry } from '@/lib/inquiries';
 import { parseListingForm, type ListingFormErrors } from '@/lib/listing-form';
-import { insertListing, setListingVisibility, updateListing } from '@/lib/listings';
+import { deleteListing, insertListing, setListingVisibility, updateListing } from '@/lib/listings';
+import { LISTING_ID_PATTERN } from '@/lib/logic';
 import { clientIp } from '@/lib/rate-limit';
 import { checkPassword } from '@/lib/session';
 import { isDbConfigured } from '@/lib/supabase';
@@ -22,7 +23,7 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   if (!loginLimiter.check(clientIp(await headers()))) return { error: '시도 횟수가 많습니다. 10분 뒤 다시 시도해 주세요.' };
   if (!checkPassword(String(form.get('password') ?? ''))) return { error: '비밀번호가 맞지 않습니다.' };
   await startSession();
-  redirect('/admin');
+  redirect(form.get('next') === 'quotes' ? '/admin/quotes' : '/admin');
 }
 
 export async function logout() {
@@ -47,11 +48,26 @@ export async function saveListing(_prev: ListingFormState, form: FormData): Prom
   } catch (err) {
     return { error: err instanceof Error ? err.message : '저장에 실패했습니다.' };
   }
-  revalidatePath('/admin');
+  for (const path of ['/admin', '/partners', '/warehouses', '/compare', `/partners/${originalId || value.id}`, `/warehouses/${originalId || value.id}`]) revalidatePath(path);
   redirect(originalId ? '/admin?tab=listings' : '/admin?tab=listings&created=1');
 }
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+
+export async function removeListing(id: string): Promise<ActionResult> {
+  await assertAdmin();
+  if (typeof id !== 'string' || !LISTING_ID_PATTERN.test(id)) return { ok: false, error: '올바른 매물 ID가 아닙니다.' };
+  if (!isDbConfigured()) return { ok: false, error: 'DB 연결 전에는 매물을 삭제할 수 없습니다.' };
+  try {
+    const result = await deleteListing(id);
+    if (result === 'linked') return { ok: false, error: '상담 이력이 연결된 매물은 삭제할 수 없습니다. 비공개 또는 보관 처리해 주세요.' };
+    if (result === 'missing') return { ok: false, error: '이미 삭제되었거나 매물을 찾을 수 없습니다.' };
+  } catch {
+    return { ok: false, error: '매물 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.' };
+  }
+  for (const path of ['/admin', '/warehouses', '/partners', '/compare', `/warehouses/${id}`, `/partners/${id}`, `/admin/listings/${id}`]) revalidatePath(path);
+  return { ok: true };
+}
 
 const visibilities: Visibility[] = ['hidden', 'published', 'archived'];
 
@@ -63,7 +79,7 @@ export async function changeListingVisibility(id: string, visibility: Visibility
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : '변경에 실패했습니다.' };
   }
-  revalidatePath('/admin');
+  for (const path of ['/admin', '/partners', '/warehouses', '/compare', `/partners/${id}`, `/warehouses/${id}`]) revalidatePath(path);
   return { ok: true };
 }
 
@@ -79,4 +95,38 @@ export async function saveInquiryProgress(id: number, patch: { stage: InquirySta
   }
   revalidatePath('/admin');
   return { ok: true };
+}
+
+export async function savePartnerReview(id: number, revision: string, profileInput: unknown, stage: import('@/lib/partner-profile').PartnerStage, reviewInput?: { reviewer: string; documents: string; notes: string }) {
+  await assertAdmin();
+  const { normalizePartner, partnerStages } = await import('@/lib/partner-profile');
+  const { readPartner, writePartner } = await import('@/lib/partner-store');
+  if (!Number.isSafeInteger(id) || id <= 0 || !partnerStages.includes(stage)) return { ok: false as const, error: '입력 내용을 확인해 주세요.' };
+  const { profile, errors } = normalizePartner(profileInput, true, false);
+  if (Object.keys(errors).length) return { ok: false as const, error: '입력 내용을 확인해 주세요.', fields: errors };
+  try {
+    const previous = await readPartner(id);
+    if (!previous) return { ok: false as const, error: '업체를 찾을 수 없습니다.' };
+    if (previous.doc.revision !== revision) return { ok: false as const, error: '정보가 변경되었습니다. 편집 창을 닫고 새로고침한 뒤 다시 확인해 주세요.' };
+    let review;
+    if (reviewInput !== undefined) {
+      if (!reviewInput || typeof reviewInput.reviewer !== 'string' || typeof reviewInput.documents !== 'string' || typeof reviewInput.notes !== 'string' || reviewInput.reviewer.length > 100 || reviewInput.notes.length > 1000 || !['미확인','보완 요청','확인'].includes(reviewInput.documents)) return {ok:false as const,error:'자료 검토 정보를 확인하세요.'};
+      if (reviewInput.documents === '확인' && !reviewInput.reviewer.trim()) return {ok:false as const,error:'자료 확인 담당자를 입력하세요.'};
+      review = {...reviewInput,reviewer:reviewInput.reviewer.trim(),checkedAt:new Date().toISOString()};
+    }
+    const view = await writePartner(id, previous, profile, stage, review);
+    revalidatePath('/admin');
+    return { ok: true as const, ...view };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '저장하지 못했습니다.' }; }
+}
+
+export async function issuePartnerLink(id: number) {
+  await assertAdmin();
+  if (!Number.isSafeInteger(id) || id <= 0) return { ok: false as const, error: '업체 번호를 확인해 주세요.' };
+  try {
+    const { rotatePartnerLink } = await import('@/lib/partner-store');
+    const result = await rotatePartnerLink(id);
+    revalidatePath('/admin');
+    return { ok: true as const, ...result };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '발급하지 못했습니다.' }; }
 }

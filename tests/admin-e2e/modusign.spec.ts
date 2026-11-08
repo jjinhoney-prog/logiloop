@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+import {randomUUID,createHash} from 'node:crypto';
+test('manual external status persists without native signatures or sending',async({page,request},info)=>{
+ const db=process.env.BENCHMARK_DB_URL||'http://127.0.0.1:3507';await request.post(`${db}/reset`);
+ const id=randomUUID(),now=new Date().toISOString();
+ const document={title:'모두싸인 연결 테스트',kind:'물류대행',body:'테스트용 검토 문안',parties:[{company:'가상 화주',representative:'갑',email:'a@example.com'},{company:'가상 물류',representative:'을',email:'b@example.com'}]};
+ await request.post(`${db}/rest/v1/agreements`,{data:{id,inquiry_id:null,document,document_hash:createHash('sha256').update(JSON.stringify(document)).digest('hex'),state:'draft',revision:randomUUID(),signatures:[null,null],access_hashes:[null,null],expires_at:null,verification_note:'',created_at:now,updated_at:now}});
+ await page.goto('/admin/login');await page.getByLabel('비밀번호').fill('test-only-password');await page.getByRole('button',{name:'로그인',exact:true}).click();await expect(page).toHaveURL('/admin');
+ await page.goto('/admin/agreements');
+ await page.getByLabel('모두싸인 관리자용 문서 주소').fill('https://app.modusign.co.kr/documents/test');
+ await page.getByLabel('모두싸인에서 확인한 상태').selectOption('완료');
+ await page.getByLabel('완료 자료 비공개 보관 폴더 주소 · 완료 시 필수').fill('https://drive.google.com/folder/demo');
+ await page.getByLabel('문안·당사자·권한·상태 확인 기록',{exact:true}).fill('가상 테스트 자료 확인 기록');
+ await page.getByRole('checkbox',{name:/동일 계약과 당사자를/}).check();
+ await page.getByRole('button',{name:'모두싸인 확인 상태 기록'}).click();
+ await expect(page.getByText('모두싸인 상태: 완료 · 담당자 수동 확인')).toBeVisible();
+ await expect(page.getByRole('button',{name:'시연용 자체 서명 링크 발급'})).toBeDisabled();
+ await page.reload();await expect(page.getByText('모두싸인 상태: 완료 · 담당자 수동 확인')).toBeVisible();
+ await page.getByRole('region',{name:'모두싸인 연결'}).screenshot({path:info.outputPath('modusign-record.png')});
+ const rows=await (await request.get(`${db}/rest/v1/agreements?id=eq.${id}`)).json();
+ expect(rows[0].signatures).toEqual([null,null]);expect(rows[0].state).toBe('draft');expect(rows[0].external_agreement.history).toHaveLength(1);
+});

@@ -1,3 +1,4 @@
+import type { VolumeFields } from './inquiry-volume';
 export type ListingType = 'warehouse' | 'partner';
 
 export type TierId = 1 | 2 | 3;
@@ -18,6 +19,10 @@ export interface Tier {
 export type VerificationChecks = [string, string, string, string];
 
 export interface Listing {
+  operatingRegions?: import('./partner-regions').OperatingRegion[];
+  publicPartner?: import('./public-partner').PublicPartner;
+  /** DB에 등록된 실제 정보는 false, 시드 예시는 true. */
+  isExample?: boolean;
   id: string;
   name: string;
   region: string;
@@ -70,6 +75,8 @@ export interface Article {
   description: string;
   read: string;
   sections: [title: string, body: string][];
+  requestSituation: string;
+  requestLabel: string;
 }
 
 export type Visibility = 'hidden' | 'published' | 'archived';
@@ -90,6 +97,8 @@ export type InquiryStage = '접수' | '연락 중' | '검토 중' | '종결';
 export type MailStatus = 'pending' | 'sent' | 'failed' | 'skipped';
 
 export interface InquiryRecord {
+  shipperQuote?: import('./shipper-quote').ShipperQuote;
+  partner?: import('./partner-profile').PartnerView;
   id: number;
   kind: 'consultation' | 'partnership';
   tier: TierId;
@@ -113,7 +122,8 @@ export interface InquiryRecord {
   listings: Pick<Listing, 'id' | 'name'>[];
 }
 
-export interface InquiryData {
+export interface InquiryData extends VolumeFields {
+  shipperQuote?: import('./shipper-quote').ShipperQuote;
   tier: TierId;
   help: string;
   item: string;
@@ -130,9 +140,11 @@ export interface InquiryData {
   source: string;
 }
 
-export type InquiryErrors = Partial<Record<'name' | 'company' | 'phone' | 'item' | 'consent', string>>;
+export type InquiryErrors = Partial<Record<'name' | 'company' | 'phone' | 'item' | 'consent' | 'note' | 'storageQuantity' | 'outboundQuantity' | 'region' | 'temperature' | `shipper.${string}`, string>>;
 
 export interface ListingFilters {
+  category?: string;
+  service?: string;
   query?: string;
   region?: string;
   temperature?: string;

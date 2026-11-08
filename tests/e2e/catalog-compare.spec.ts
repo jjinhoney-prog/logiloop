@@ -65,7 +65,7 @@ test.describe('comparison list', () => {
     await page.getByRole('button', { name: '부산권 수출입 3PL 파트너 비교에서 제거' }).click();
     await expect(page.locator('.comparison-table thead th')).toHaveCount(2);
 
-    const cta = page.getByRole('link', { name: '이 후보로 상담 준비' });
+    const cta = page.locator('.compare-request-bar').getByRole('link', { name: '이 후보 검토 요청하기' });
     await expect(cta).toHaveAttribute('href', '/consultation?tier=2&candidates=busan-01');
 
     await page.getByRole('button', { name: '모두 비우기' }).click();
@@ -139,7 +139,7 @@ test.describe('routing', () => {
     expect(headers['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
     expect(headers['x-powered-by']).toBeUndefined();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
-    await expect(page).toHaveTitle('로지루프 | 전국 물류거점 비교');
+    await expect(page).toHaveTitle('로지루프 | 화주를 위한 창고·물류사 찾기');
   });
 
   test('pages do not request Google Fonts at runtime', async ({ page }) => {

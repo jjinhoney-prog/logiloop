@@ -1,4 +1,5 @@
 'use client';
+import OperatingRegionFields from './operating-region-fields';
 
 import { startTransition, useActionState, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -8,10 +9,14 @@ import { listingTemperatures } from '@/lib/data';
 import type { ListingInput } from '@/lib/listing-form';
 import type { ListingType } from '@/lib/types';
 
+import PublicPartnerFields from './public-partner-fields';
+import { ListingPhoto } from './listing-controls';
+
 const checkLabels = ['공급자 입력', '서류 확인', '현장 확인', '화주 조건 수용 확인'];
 
-export function ListingForm({ initial }: { initial?: ListingInput }) {
-  const editing = Boolean(initial);
+export function ListingForm({ initial: existing, draft }: { initial?: ListingInput; draft?: Partial<ListingInput> }) {
+  const initial = existing ?? draft;
+  const editing = Boolean(existing);
   const [state, formAction, pending] = useActionState<ListingFormState, FormData>(saveListing, undefined);
   const [type, setType] = useState<ListingType>(initial?.type ?? 'warehouse');
   const errors = state?.fields ?? {};
@@ -50,6 +55,8 @@ export function ListingForm({ initial }: { initial?: ListingInput }) {
           {state.error}
         </p>
       )}
+      {editing && <div className="listing-edit-photo"><h2>대표 사진</h2><ListingPhoto key={initial?.imageUrl} name={existing!.name} imageUrl={initial?.imageUrl} /><p className="muted small">사진을 누르면 크게 볼 수 있습니다.</p></div>}
+      {type === 'partner' && <><input type="hidden" name="imageUrl" value={initial?.imageUrl ?? ''}/>{initial?.imageUrl && <p>업체 등록 로고를 공개 소개에 함께 저장합니다.</p>}</>}
       <h2>기본 정보</h2>
       <div className="form-grid">
         {field('id', '매물 ID (URL)', input('id', { disabled: editing, placeholder: 'busan-02', maxLength: 48, autoComplete: 'off' }), editing ? '등록 후에는 바꿀 수 없습니다.' : '영문 소문자·숫자·하이픈. 공개 주소에 사용됩니다.')}
@@ -77,6 +84,7 @@ export function ListingForm({ initial }: { initial?: ListingInput }) {
         {field('sortOrder', '노출 순서', input('sortOrder', { type: 'number', min: 0, max: 9999, placeholder: '100' }), '작은 숫자가 먼저 보입니다.')}
       </div>
 
+      {type === 'partner' && <OperatingRegionFields initial={initial?.operatingRegions} error={errors.operatingRegions}/>}
       <h2>조건</h2>
       <div className="form-grid">
         {type === 'warehouse' && field('area', '면적 (㎡)', input('area', { inputMode: 'numeric', placeholder: '990' }))}
@@ -92,18 +100,19 @@ export function ListingForm({ initial }: { initial?: ListingInput }) {
       {field('suitability', '적합성을 검토할 화주', input('suitability', { maxLength: 300 }))}
       {field('limitation', '확인이 필요한 사항', input('limitation', { maxLength: 300 }))}
 
+      {type === 'partner' && <PublicPartnerFields initial={initial?.publicPartner} error={errors.publicPartner}/>}
       <h2>확인 상태</h2>
       <div className="form-grid">
         {checkLabels.map((label, i) => (
           <label className="form-field" key={label}>
             <span>{label}</span>
-            <input name={`check${i}`} defaultValue={initial?.checks[i] ?? ''} maxLength={40} placeholder="확인 대기" />
+            <input name={`check${i}`} defaultValue={initial?.checks?.[i] ?? ''} maxLength={40} placeholder="확인 대기" />
           </label>
         ))}
       </div>
 
       <h2>출처</h2>
-      {field('sourceUrl', '지음부동산 매물 주소 (선택)', input('sourceUrl', { inputMode: 'url', maxLength: 100, placeholder: 'https://ziumrealty.com/item/view/10967' }), '입력하면 실매물로 표시되고 상세 화면에 지음부동산 매물 링크가 붙습니다. 비우면 ‘예시’로 표시됩니다.')}
+      {field('sourceUrl', '지음부동산 매물 주소 (선택)', input('sourceUrl', { inputMode: 'url', maxLength: 100, placeholder: 'https://ziumrealty.com/item/view/10967' }), '입력하면 상세 화면에 지음부동산 매물 링크가 붙습니다. 3PL 접수에서 가져온 소개는 출처 링크 없이도 등록 정보로 표시됩니다.')}
 
       <h2>지도 좌표</h2>
       <p className="muted small">실제 위치가 아닌 권역 대표 좌표를 입력합니다. 거리 계산과 지도 표시에 사용됩니다.</p>

@@ -134,7 +134,7 @@ delete from public.inquiries where stage = '종결' and closed_at < now() - inte
 
 | 체크 | 상태 |
 |---|---|
-| DB 기능 1개 이상 | 매물 CRUD(삭제 대신 보관) + 상담 저장·관리 |
+| DB 기능 1개 이상 | 매물 CRUD(상담 연결 매물은 삭제 차단·보관) + 상담 저장·관리 |
 | RLS 정책 | 미사용. 대신 권한 `revoke` + 서버 전용 접근 |
 | 트리거 | 미사용 (`updated_at`은 앱에서 설정) |
 | ORM | 미사용 (supabase-js 쿼리 빌더만) |

@@ -1,11 +1,17 @@
+import { normalizeShipperQuote, shipperLeadRows, shipperQuoteRows, SHIPPER_QUOTE_TITLE } from './shipper-quote';
+import { withCostLine } from './lead';
+import { formatInquiryVolume, type VolumeFields } from './inquiry-volume';
 import { inquiryTemperatureOptions, partnerTypes, regionOptions, sourceOptions, tiers, timingOptions } from './data';
 import { COMPARE_LIMIT, validateInquiry } from './logic';
 import type { InquiryData, InquiryErrors, Listing, TierId } from './types';
+import { requestSituations } from './service-content';
+import { leaseReviewNote, rentReviewTitle, type LeaseReview } from './lease-review';
 
 /** 폼의 maxLength와 같은 값. 서버에서 다시 자른다. */
 export const FIELD_LIMITS = { company: 100, name: 100, phone: 20, item: 100, volume: 100, regionDetail: 150, note: 2000 } as const;
 
 export interface InquiryPayload extends InquiryData {
+  leaseReview?: LeaseReview;
   partnership: boolean;
   targets: string[];
   /** 허니팟. 사람에게는 보이지 않는 필드라 값이 있으면 자동 입력으로 본다. */
@@ -26,11 +32,17 @@ const pick = (value: unknown, allowed: readonly string[], fallback: string) => (
 /** 신뢰할 수 없는 요청 본문을 폼과 같은 규칙으로 정리하고 검증한다. catalog는 공개 매물 목록이다. */
 export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'name'>[]): { value: NormalizedInquiry; errors: InquiryErrors } {
   const raw = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
-  const partnership = raw.partnership === true;
+  const formalQuote = raw.requestMode === 'quote';
+  const partnership = !formalQuote && raw.partnership === true;
   const tier = ([1, 2, 3] as const).find((t) => t === raw.tier) ?? (1 as TierId);
+  // Do not coerce invalid values: validation must reject malformed structured quantities.
+  const volumeFields: VolumeFields = !partnership && ('storageQuantity' in raw || 'outboundQuantity' in raw)
+    ? { storageQuantity: raw.storageQuantity as string, storageUnit: raw.storageUnit as string, outboundQuantity: raw.outboundQuantity as string, outboundUnit: raw.outboundUnit as string }
+    : {};
   const data: InquiryData = {
+    ...volumeFields,
     tier,
-    help: partnership ? pick(raw.help, partnerTypes.map(([t]) => t), partnerTypes[0][0]) : '',
+    help: partnership ? pick(raw.help, partnerTypes.map(([t]) => t), partnerTypes[0][0]) : pick(raw.help, requestSituations.map((s) => s.title), ''),
     company: str(raw.company, FIELD_LIMITS.company),
     name: str(raw.name, FIELD_LIMITS.name),
     phone: str(raw.phone, FIELD_LIMITS.phone),
@@ -44,6 +56,21 @@ export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'n
     consent: raw.consent === true,
     source: pick(raw.source, sourceOptions, '기타'),
   };
+  if (!partnership && data.help === rentReviewTitle) {
+    data.note = leaseReviewNote(raw.leaseReview, data.note);
+  }
+  const errors = validateInquiry(data, partnership);
+  if (!partnership && !formalQuote && typeof raw.costRange === 'string') data.note = withCostLine(data.note, raw.costRange);
+  if (formalQuote) {
+    const parsed = normalizeShipperQuote(raw.shipperQuote);
+    data.shipperQuote = parsed.value; data.help = SHIPPER_QUOTE_TITLE; data.timing = parsed.value.startDate || '협의 필요';
+    data.region = str(raw.region, 100) || '협의 필요';
+    data.temperature = str(raw.temperature, 100) || '협의 필요';
+    for (const [key, message] of Object.entries(parsed.errors)) errors[`shipper.${key}`] = message;
+    if (!data.item || ['미정','아직 모름'].includes(data.item)) errors.item = '견적을 받을 실제 상품을 입력하세요.';
+  }
+  if (!errors.storageQuantity && !errors.outboundQuantity) data.volume = formatInquiryVolume(data);
+  if (data.shipperQuote) data.volume = `평균 보관 ${data.shipperQuote.stock||'확인 필요'}${data.shipperQuote.stockUnit} / 월 출고 ${data.shipperQuote.outbound||'확인 필요'}주문`;
   const targets = Array.isArray(raw.targets) ? raw.targets.filter((id): id is string => typeof id === 'string') : [];
   const matched = [...new Set(targets)]
     .map((id) => catalog.find((item) => item.id === id))
@@ -51,7 +78,7 @@ export function normalizeInquiry(body: unknown, catalog: Pick<Listing, 'id' | 'n
     .slice(0, COMPARE_LIMIT);
   return {
     value: { data, partnership, targetIds: matched.map((item) => item.id), targetNames: matched.map((item) => item.name) },
-    errors: validateInquiry(data, partnership),
+    errors,
   };
 }
 
@@ -93,12 +120,14 @@ export function emailRows({ data, targetNames }: NormalizedInquiry, receivedAt: 
     ['회사명', data.company],
     ['담당자', data.name],
     ['연락처', data.phone],
+    ['요청 상황', data.help || '조건 확인 후 협의'],
     ['품목', data.item || '미입력'],
     ['물량', data.volume],
     ['지역', regionLabel(data)],
     ['시점', data.timing],
     ['온도', data.temperature],
     ['요청사항', data.note || '없음'],
+    ...(data.shipperQuote ? [...shipperQuoteRows(data.shipperQuote), ...shipperLeadRows(data.shipperQuote)] : []),
     ['유입경로', data.source],
     ['비교 후보', targetNames.join(', ') || '미정'],
     ['접수 시각', formatKst(receivedAt)],

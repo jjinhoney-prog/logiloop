@@ -1,3 +1,4 @@
+import {partnerCategories} from '@/lib/partner-brand';
 import { Select } from '@/components/ui/select';
 import { RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { regions, sizes, temperatures } from '@/lib/data';
@@ -7,6 +8,8 @@ export interface FilterState {
   region: string;
   temperature: string;
   size: string;
+  service: string;
+  category: string;
 }
 
 export function Filters({
@@ -14,11 +17,15 @@ export function Filters({
   value,
   onChange,
   onReset,
+  serviceOptions = [],
+  fixedRegion,
 }: {
   warehouse: boolean;
   value: FilterState;
   onChange: (patch: Partial<FilterState>) => void;
   onReset: () => void;
+  serviceOptions?: string[];
+  fixedRegion?: string;
 }) {
   return (
     <div className="filter-panel">
@@ -26,7 +33,7 @@ export function Filters({
         <Search size={19} />
         <input
           aria-label="지역, 시설 또는 서비스 검색"
-          placeholder={warehouse ? '지역, 시설명, 필요한 설비를 검색하세요' : '지역, 업체명, 필요한 서비스를 검색하세요'}
+          placeholder={warehouse ? '지역, 시설명, 필요한 설비를 검색하세요' : '취급 품목, 업체명, 필요한 작업을 검색하세요'}
           value={value.query}
           onChange={(e) => onChange({ query: e.target.value })}
         />
@@ -43,7 +50,7 @@ export function Filters({
         </span>
         <div className="select-field">
           <span>지역</span>
-          <Select label="지역" value={value.region} onChange={(value) => onChange({ region: value })} options={regions} />
+          {fixedRegion ? <strong>{fixedRegion}</strong> : <Select label="지역" value={value.region} onChange={(value) => onChange({ region: value })} options={regions} />}
         </div>
         <div className="select-field">
           <span>온도</span>
@@ -55,6 +62,8 @@ export function Filters({
             <Select label="면적" value={value.size} onChange={(value) => onChange({ size: value })} options={sizes} />
           </div>
         )}
+        {!warehouse && <div className="select-field"><span>품목</span><Select label="취급 품목" value={value.category} onChange={category=>onChange({category})} options={['전체 품목',...partnerCategories]}/></div>}
+        {!warehouse && <div className="select-field"><span>작업</span><Select label="제공 작업" value={value.service} onChange={(service) => onChange({ service })} options={['전체 작업', ...serviceOptions]} /></div>}
         <button className="reset-button" onClick={onReset}>
           <RotateCcw size={15} />
           초기화

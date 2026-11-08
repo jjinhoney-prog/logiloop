@@ -1,9 +1,57 @@
+import { pageMetadata } from '@/lib/page-metadata';
 import Home from '@/components/home/home';
-import { getPublicListings } from '@/lib/listings';
+import type { Metadata } from 'next';
 
-// 매물은 요청마다 DB에서 읽는다. 관리자 화면의 변경이 바로 반영된다.
-export const dynamic = 'force-dynamic';
+const homeMetadata = pageMetadata(
+  '창고 임대·물류사 찾기',
+  '로지루프(LogiLoop)는 지음부동산중개법인이 운영하는 창고·물류사 매칭 플랫폼입니다. 부산·김해·양산 창고 임대와 3PL 위탁 후보를 비교하고, 전국 희망 지역과 운영 조건으로 상담을 요청하세요.',
+  '/',
+);
 
-export default async function Page() {
-  return <Home listings={(await getPublicListings()).slice(0, 3)} />;
+// 루트 layout의 title.template은 같은 세그먼트의 홈페이지에 적용되지 않는다.
+export const metadata: Metadata = {
+  ...homeMetadata,
+  title: { absolute: '로지루프 | 창고 임대·물류사 찾기' },
+  openGraph: { ...homeMetadata.openGraph, title: '로지루프 | 창고 임대·물류사 찾기' },
+  twitter: { ...homeMetadata.twitter, title: '로지루프 | 창고 임대·물류사 찾기' },
+};
+
+// 브랜드명 '로지루프'를 구글이 독립 개체로 인식하도록 WebSite와 Organization을 함께 선언한다.
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://logiloop.co.kr/#organization',
+      name: '로지루프',
+      alternateName: ['LogiLoop', 'LOGILOOP', '로지루프 LogiLoop'],
+      url: 'https://logiloop.co.kr/',
+      logo: 'https://logiloop.co.kr/icon.svg',
+      description: homeMetadata.description,
+      areaServed: '대한민국',
+      parentOrganization: {
+        '@type': 'Organization',
+        name: '지음부동산중개법인',
+        legalName: '지음부동산중개법인 주식회사',
+        url: 'https://ziumrealty.com/',
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://logiloop.co.kr/#website',
+      name: '로지루프',
+      alternateName: ['LogiLoop', '로지루프 by 지음'],
+      url: 'https://logiloop.co.kr/',
+      inLanguage: 'ko-KR',
+      description: homeMetadata.description,
+      publisher: { '@id': 'https://logiloop.co.kr/#organization' },
+    },
+  ],
+};
+
+export default function Page() {
+  return <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
+    <Home />
+  </>;
 }
