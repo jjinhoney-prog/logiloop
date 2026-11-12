@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { issuePartnerLink, savePartnerReview } from '@/app/admin/actions';
+import { approvePartner, issuePartnerLink, savePartnerReview } from '@/app/admin/actions';
+import { approvalStatus, PRIVATE_DISCLOSURE } from '@/lib/partner-approval';
 import { PartnerProfileEditor } from '@/components/partnership/partner-form';
 import { partnerStages, type PartnerStage, type PartnerView } from '@/lib/partner-profile';
 import type { InquiryRecord } from '@/lib/types';
@@ -16,7 +17,7 @@ export function PartnerTable({ inquiries }: { inquiries: InquiryRecord[] }) {
   const current = inquiries.find(r => r.id === active);
   return <><div className="admin-table-top"><h2>3PL 업체 등록 목록</h2><span className="muted small">검토 상태와 공개 노출은 별개입니다.</span></div>
     <div className="form-grid"><label className="form-field"><span>업체명·지역 검색</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="업체명 또는 운영 지역" /></label><label className="form-field"><span>업체 검토 상태</span><select value={stage} onChange={e => setStage(e.target.value)}><option>전체</option>{partnerStages.map(s => <option key={s}>{s}</option>)}</select></label></div>
-    <div className="table-scroll"><table className="data-table"><thead><tr><th>업체·연락처</th><th>지역</th><th>서비스</th><th>검토 상태</th><th>메일 알림</th><th>관리</th></tr></thead><tbody>{filtered.map(r => <tr key={r.id}><td><strong>{r.company}</strong><small>#{r.id} · {r.name} · {r.phone}</small></td><td>{r.partner?.profile.regions.map(v => `${v.province} ${v.district}`).join(', ') || r.regionDetail || r.region}</td><td>{r.partner?.profile.services.join(', ') || r.help}</td><td><span className="status-tag">{r.partner?.stage || `기존 접수 · ${r.stage}`}</span></td><td>{r.mailStatus === 'failed' ? '발송 실패 · 직접 확인' : r.mailStatus === 'sent' ? '발송' : r.mailStatus === 'pending' ? '대기' : '미설정'}</td><td><button className="text-button" onClick={() => setActive(active === r.id ? null : r.id)}>{active === r.id ? '접기' : '정보 확인·보완'}</button></td></tr>)}</tbody></table></div>
+    <div className="table-scroll"><table className="data-table"><thead><tr><th>업체·연락처</th><th>지역</th><th>서비스</th><th>검토 상태</th><th>3PL 목록 공개</th><th>메일 알림</th><th>관리</th></tr></thead><tbody>{filtered.map(r => <tr key={r.id}><td><strong>{r.company}</strong><small>#{r.id} · {r.name} · {r.phone}</small></td><td>{r.partner?.profile.regions.map(v => `${v.province} ${v.district}`).join(', ') || r.regionDetail || r.region}</td><td>{r.partner?.profile.services.join(', ') || r.help}</td><td><span className="status-tag">{r.partner?.stage || `기존 접수 · ${r.stage}`}</span></td><td>{r.partner ? <span className={`status-tag approval-${approvalStatus(r.partner) === '공개 중' ? 'live' : approvalStatus(r.partner) === '변경 승인 대기' ? 'pending' : 'none'}`}>{approvalStatus(r.partner)}</span> : '-'}</td><td>{r.mailStatus === 'failed' ? '발송 실패 · 직접 확인' : r.mailStatus === 'sent' ? '발송' : r.mailStatus === 'pending' ? '대기' : '미설정'}</td><td><button className="text-button" onClick={() => setActive(active === r.id ? null : r.id)}>{active === r.id ? '접기' : '정보 확인·보완'}</button></td></tr>)}</tbody></table></div>
     {!filtered.length && <p className="partner-empty">{inquiries.length ? '검색 조건에 맞는 업체가 없습니다.' : '아직 등록된 3PL 업체가 없습니다.'}</p>}
     {current && <div className="admin-editor"><div className="section-title"><h3>{current.company} · #{current.id}</h3><button className="text-button" onClick={() => setActive(null)}>편집 닫기</button></div>{current.partner ? <PartnerAdminEditor key={current.id} id={current.id} initial={current.partner} /> : <><p>이전 상담 양식으로 접수된 업체입니다. 아래 내용을 확인하고 상담 접수 탭에서 담당자·진행 상태를 관리해 주세요.</p><pre className="partner-legacy">{current.note || '추가 내용 없음'}</pre></>}</div>}
   </>;
@@ -30,14 +31,15 @@ function PartnerAdminEditor({ id, initial }: { id: number; initial: PartnerView 
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [copied, setCopied] = useState(false);
-  return <><p className="muted small">‘등록 준비 완료’는 공개 상태가 아닙니다. 공개 범위를 저장한 뒤 아래에서 공개용 소개를 만들고, 매물 관리에서 공개로 전환하세요.</p>
+  return <><p className="muted small">업체 정보를 확인한 뒤 아래 ‘승인하고 3PL 목록에 공개’를 누르면 바로 공개됩니다.</p>
     <PartnerProfileEditor key={view.revision} view={view} adminControls={<><div className="form-grid"><label className="form-field"><span>자료 검토 상태</span><select value={review.documents} onChange={e=>setReview({...review,documents:e.target.value})}>{['미확인','보완 요청','확인'].map(v=><option key={v}>{v}</option>)}</select></label><label className="form-field"><span>자료 확인 담당자</span><input value={review.reviewer} maxLength={100} onChange={e=>setReview({...review,reviewer:e.target.value})}/></label></div><label className="form-field"><span>자료 검토·보완 메모 (내부)</span><textarea value={review.notes} maxLength={1000} onChange={e=>setReview({...review,notes:e.target.value})}/></label>{initial.review?.checkedAt&&<p className="muted small">최근 검토 기록: {new Date(initial.review.checkedAt).toLocaleString('ko-KR')}</p>}<label className="form-field"><span>검토 상태</span><select aria-label="검토 상태" value={stage} onChange={e => setStage(e.target.value as PartnerStage)}>{partnerStages.map(s => <option key={s}>{s}</option>)}</select></label></>} onSave={async (profile, revision) => {
       const result = await savePartnerReview(id, revision, profile, stage, review);
       if (!result.ok) throw new Error(result.error);
       // Keep the mounted editor so its saved status remains visible.
       router.refresh(); return result;
     }} />
-    <Link className="button button-outline" href={`/admin/listings/new?partner=${id}`}>물류사·3PL 공개용 소개 만들기</Link>
+    <ApprovePanel id={id} view={view} onApproved={(next) => { setView(next); setStage(next.stage); router.refresh(); }} />
+    <Link className="text-button" href={view.approval ? `/admin/listings/${view.approval.listingId}` : `/admin/listings/new?partner=${id}`}>{view.approval ? '공개 매물 직접 수정' : '공개 매물 직접 만들기'}</Link>
     <details className="partner-link-tools"><summary>업체에 전달할 보완 링크 재발급</summary><p>저장하지 않은 수정사항은 먼저 저장하세요. 재발급 시 기존 링크는 즉시 무효화되고 새 링크는 30일간 유효합니다. 자동 발송되지 않습니다.</p><button className="button button-outline" disabled={pending} onClick={async () => {
       setPending(true); setError(''); setCopied(false);
       try { const result = await issuePartnerLink(id); if (!result.ok) throw new Error(result.error); setView(result); setStage(result.stage); setLink(`${window.location.origin}/partnership/manage#${id}.${result.token}`); router.refresh(); }
@@ -45,4 +47,26 @@ function PartnerAdminEditor({ id, initial }: { id: number; initial: PartnerView 
       finally { setPending(false); }
     }}>{pending ? '발급 중…' : '새 보완 링크 발급'}</button>{link && <><label className="form-field"><span>새 보완 링크 · 담당자에게 직접 전달</span><input readOnly value={link} onFocus={e => e.target.select()} /></label><button className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); } catch { setError('위 링크를 선택해 직접 복사해 주세요.'); } }}>링크 복사</button><p role="status">{copied ? '복사했습니다.' : ''}</p></>}{error && <p role="alert" className="field-error">{error}</p>}</details>
   </>;
+}
+
+function ApprovePanel({ id, view, onApproved }: { id: number; view: PartnerView; onApproved: (next: PartnerView) => void }) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const status = approvalStatus(view);
+  const blocked = view.profile.disclosure === PRIVATE_DISCLOSURE;
+  const label = status === '미공개' ? '승인하고 3PL 목록에 공개' : status === '변경 승인 대기' ? '변경 내용 승인·반영' : '최신 정보로 다시 반영';
+  return <section className="partner-approve" aria-labelledby={`approve-${id}`}>
+    <h4 id={`approve-${id}`}>3PL 목록 공개 · {status}</h4>
+    <p className="muted small">{blocked ? '업체가 비공개 매칭만 희망했습니다. 업체 동의를 받은 뒤 공개 희망 범위를 바꿔 저장해야 공개할 수 있습니다.'
+      : status === '변경 승인 대기' ? '공개 후 업체가 정보를 다시 저장했습니다. 승인하면 업체명·지역·온도·서비스·소개·로고가 목록에 반영됩니다.'
+      : '승인하면 업체가 저장한 업체명·운영 지역·온도·서비스·소개·로고로 3PL 목록에 바로 공개합니다. 연락처·서류·센터 상세 주소는 공개하지 않습니다. 저장하지 않은 수정사항은 먼저 저장하세요.'}</p>
+    {view.approval && <p className="muted small">마지막 승인 {new Date(view.approval.at).toLocaleString('ko-KR')}</p>}
+    <button type="button" className="button button-dark" disabled={pending || blocked} onClick={async () => {
+      setPending(true); setError('');
+      try { const result = await approvePartner(id, view.revision); if (!result.ok) throw new Error(result.error); onApproved(result); }
+      catch (err) { setError(err instanceof Error ? err.message : '공개하지 못했습니다.'); }
+      finally { setPending(false); }
+    }}>{pending ? '공개 중…' : label}</button>
+    {error && <p role="alert" className="field-error">{error}</p>}
+  </section>;
 }

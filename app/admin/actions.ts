@@ -130,3 +130,39 @@ export async function issuePartnerLink(id: number) {
     return { ok: true as const, ...result };
   } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '발급하지 못했습니다.' }; }
 }
+
+/**
+ * 업체가 저장한 최신 정보를 승인하고 3PL 목록에 공개한다. 처음이면 매물을 만들고,
+ * 이미 공개 중이면 업체 입력 항목만 새로 반영한다. 비공개 매칭만 희망한 업체는 공개하지 않는다.
+ */
+export async function approvePartner(id: number, revision: string) {
+  await assertAdmin();
+  if (!Number.isSafeInteger(id) || id <= 0 || typeof revision !== 'string') return { ok: false as const, error: '업체 번호를 확인해 주세요.' };
+  if (!isDbConfigured()) return { ok: false as const, error: 'DB 연결 전에는 공개할 수 없습니다.' };
+  const { readPartner, markPartnerApproved } = await import('@/lib/partner-store');
+  const { approvalListing, validateApprovalListing, PUBLIC_DISCLOSURE, PRIVATE_DISCLOSURE } = await import('@/lib/partner-approval');
+  const { geocodeRegion } = await import('@/lib/geocode');
+  const { getAdminListing } = await import('@/lib/listings');
+  try {
+    const previous = await readPartner(id);
+    if (!previous) return { ok: false as const, error: '업체를 찾을 수 없습니다.' };
+    if (previous.doc.revision !== revision) return { ok: false as const, error: '업체 정보가 바뀌었습니다. 새로고침한 뒤 최신 내용을 확인하고 승인해 주세요.' };
+    const profile = previous.doc.profile;
+    if (profile.disclosure === PRIVATE_DISCLOSURE) return { ok: false as const, error: '비공개 매칭만 희망한 업체입니다. 업체 동의를 받은 뒤 공개 희망 범위를 바꿔 저장해 주세요.' };
+    const listingId = `registered-partner-${id}`;
+    const existing = await getAdminListing(listingId);
+    const first = profile.regions[0];
+    const point = await geocodeRegion(`${first.province} ${first.district}`) ?? (existing ? { lat: existing.lat, lng: existing.lng } : null);
+    if (!point) return { ok: false as const, error: `운영 지역(${first.province} ${first.district})의 위치를 찾지 못했습니다. 시·군·구 단위로 고쳐 저장하거나 매물 등록 화면에서 직접 만들어 주세요.` };
+    const approvedProfile = { ...profile, disclosure: PUBLIC_DISCLOSURE };
+    // 검증 단계에서 폼 항목만 다시 읽으므로 기존 매물의 visibility는 저장 값에 섞이지 않는다.
+    const { value, errors } = validateApprovalListing(approvalListing(id, approvedProfile, point, existing));
+    if (Object.keys(errors).length) return { ok: false as const, error: `공개 정보를 확인해 주세요: ${Object.values(errors).join(' ')}` };
+    if (existing) { if (!(await updateListing(listingId, value))) return { ok: false as const, error: '매물을 찾을 수 없습니다.' }; }
+    else if ((await insertListing(value)) === 'duplicate') return { ok: false as const, error: '같은 매물이 이미 있습니다. 새로고침 후 다시 시도해 주세요.' };
+    await setListingVisibility(listingId, 'published');
+    const view = await markPartnerApproved(id, previous, approvedProfile, listingId);
+    for (const path of ['/admin', '/partners', '/compare', `/partners/${listingId}`]) revalidatePath(path);
+    return { ok: true as const, ...view };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '공개하지 못했습니다.' }; }
+}

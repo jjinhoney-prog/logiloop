@@ -23,8 +23,11 @@ export interface PartnerProfile {
   centers: PartnerCenter[];
 }
 export interface PartnerReview { reviewer: string; checkedAt: string; documents: string; notes: string }
+/** 관리자가 승인해 공개한 시점의 업체 정보 revision. 이후 업체가 저장하면 revision이 달라진다. */
+export interface PartnerApproval { revision: string; at: string; listingId: string }
 export interface PartnerView {
   review?: PartnerReview;
+  approval?: PartnerApproval;
   profile: PartnerProfile; stage: PartnerStage; revision: string;
 }
 export const partnerProvinces = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];

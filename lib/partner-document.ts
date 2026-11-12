@@ -25,5 +25,5 @@ export function validPartnerAccess(doc: PartnerDocument, token: string, now = Da
 
 export function redactPartnerNote(note: string) {
   const doc = decodePartnerDocument(note);
-  return doc ? { note: partnerSummary(doc.profile), partner: { ...partnerView(doc), review: doc.review } } : { note };
+  return doc ? { note: partnerSummary(doc.profile), partner: { ...partnerView(doc), review: doc.review, approval: doc.approval } } : { note };
 }

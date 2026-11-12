@@ -42,6 +42,17 @@ export async function writePartner(id: number, previous: Awaited<ReturnType<type
   if (!data?.length) throw new PartnerConflict('다른 곳에서 정보가 변경되었습니다. 최신 정보를 다시 불러온 뒤 수정해 주세요.');
   return partnerView(doc);
 }
+/** 승인 기록을 남긴다. 승인 직전에 읽은 revision 그대로일 때만 저장해, 그 사이 업체가 바꾼 내용을 승인한 것으로 남기지 않는다. */
+export async function markPartnerApproved(id: number, previous: Awaited<ReturnType<typeof readPartner>> & {}, profile: PartnerProfile, listingId: string) {
+  const revision = randomUUID();
+  const doc: PartnerDocument = { ...previous.doc, profile, stage: '등록 준비 완료', revision, approval: { revision, at: new Date().toISOString(), listingId } };
+  const { data, error } = await db().from('inquiries').update({
+    note: serialize(doc), stage: '검토 중', updated_at: new Date(Math.max(Date.now(), Date.parse(previous.updatedAt) + 1)).toISOString(),
+  }).eq('id', id).eq('kind', 'partnership').eq('updated_at', previous.updatedAt).select('id');
+  if (error) throw new Error('승인 기록을 저장하지 못했습니다.');
+  if (!data?.length) throw new PartnerConflict('승인 중에 업체 정보가 바뀌었습니다. 새로고침 후 다시 승인해 주세요.');
+  return { ...partnerView(doc), review: doc.review, approval: doc.approval };
+}
 export async function rotatePartnerLink(id: number) {
   const previous = await readPartner(id);
   if (!previous) throw new Error('간편 등록된 업체를 찾을 수 없습니다.');
