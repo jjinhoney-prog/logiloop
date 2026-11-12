@@ -1,6 +1,7 @@
 import { decodeShipperQuote, encodeShipperQuote, SHIPPER_QUOTE_TITLE } from './shipper-quote';
 import 'server-only';
 import { redactPartnerNote } from './partner-document';
+import { redactWarehouseNote, WAREHOUSE_SOURCE } from './warehouse-document';
 import type { NormalizedInquiry } from './inquiry-email';
 import { db } from './supabase';
 import type { InquiryRecord, InquiryStage, MailStatus, TierId } from './types';
@@ -100,7 +101,7 @@ export async function getInquiries(limit = 200): Promise<InquiryRecord[]> {
     regionDetail: row.region_detail,
     timing: row.timing,
     temperature: row.temperature,
-    ...(row.kind === 'partnership' && row.source === '3PL 간편 등록' ? redactPartnerNote(row.note) : { note: row.note }),
+    ...(row.kind === 'partnership' && row.source === '3PL 간편 등록' ? redactPartnerNote(row.note) : row.kind === 'partnership' && row.source === WAREHOUSE_SOURCE ? redactWarehouseNote(row.note) : { note: row.note }),
     ...(row.kind === 'consultation' && row.help === SHIPPER_QUOTE_TITLE && decodeShipperQuote(row.note) ? { shipperQuote: decodeShipperQuote(row.note)!.requirements, note: decodeShipperQuote(row.note)!.note } : {}),
     source: row.source,
     stage: row.stage,

@@ -99,6 +99,7 @@ export type MailStatus = 'pending' | 'sent' | 'failed' | 'skipped';
 export interface InquiryRecord {
   shipperQuote?: import('./shipper-quote').ShipperQuote;
   partner?: import('./partner-profile').PartnerView;
+  warehouse?: import('./warehouse-profile').WarehouseView;
   id: number;
   kind: 'consultation' | 'partnership';
   tier: TierId;

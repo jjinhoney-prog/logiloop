@@ -166,3 +166,79 @@ export async function approvePartner(id: number, revision: string) {
     return { ok: true as const, ...view };
   } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '공개하지 못했습니다.' }; }
 }
+
+// ── 창고 임대 등록 ──
+
+export async function saveWarehouseReview(id: number, revision: string, profileInput: unknown, stage: import('@/lib/partner-profile').PartnerStage, reviewInput?: { reviewer: string; documents: string; notes: string }) {
+  await assertAdmin();
+  const { partnerStages } = await import('@/lib/partner-profile');
+  const { normalizeWarehouse } = await import('@/lib/warehouse-profile');
+  const { readWarehouse, writeWarehouse } = await import('@/lib/warehouse-store');
+  if (!Number.isSafeInteger(id) || id <= 0 || !partnerStages.includes(stage)) return { ok: false as const, error: '입력 내용을 확인해 주세요.' };
+  const { profile, errors } = normalizeWarehouse(profileInput, true, false);
+  if (Object.keys(errors).length) return { ok: false as const, error: '입력 내용을 확인해 주세요.', fields: errors };
+  try {
+    const previous = await readWarehouse(id);
+    if (!previous) return { ok: false as const, error: '창고 등록을 찾을 수 없습니다.' };
+    if (previous.doc.revision !== revision) return { ok: false as const, error: '정보가 변경되었습니다. 편집 창을 닫고 새로고침한 뒤 다시 확인해 주세요.' };
+    let review;
+    if (reviewInput !== undefined) {
+      if (!reviewInput || typeof reviewInput.reviewer !== 'string' || typeof reviewInput.documents !== 'string' || typeof reviewInput.notes !== 'string' || reviewInput.reviewer.length > 100 || reviewInput.notes.length > 1000 || !['미확인', '보완 요청', '확인'].includes(reviewInput.documents)) return { ok: false as const, error: '자료 검토 정보를 확인하세요.' };
+      if (reviewInput.documents === '확인' && !reviewInput.reviewer.trim()) return { ok: false as const, error: '자료 확인 담당자를 입력하세요.' };
+      review = { ...reviewInput, reviewer: reviewInput.reviewer.trim(), checkedAt: new Date().toISOString() };
+    }
+    const view = await writeWarehouse(id, previous, profile, stage, review);
+    revalidatePath('/admin');
+    return { ok: true as const, ...view };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '저장하지 못했습니다.' }; }
+}
+
+export async function issueWarehouseLink(id: number) {
+  await assertAdmin();
+  if (!Number.isSafeInteger(id) || id <= 0) return { ok: false as const, error: '접수 번호를 확인해 주세요.' };
+  try {
+    const { rotateWarehouseLink } = await import('@/lib/warehouse-store');
+    const result = await rotateWarehouseLink(id);
+    revalidatePath('/admin');
+    return { ok: true as const, ...result };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '발급하지 못했습니다.' }; }
+}
+
+/**
+ * 등록자가 저장한 최신 정보를 승인하고 창고 목록에 공개한다. 처음이면 매물을 만들고,
+ * 이미 공개 중이면 등록자 입력 항목만 새로 반영한다. 비공개 매칭만 희망한 등록은 공개하지 않는다.
+ */
+export async function approveWarehouse(id: number, revision: string) {
+  await assertAdmin();
+  if (!Number.isSafeInteger(id) || id <= 0 || typeof revision !== 'string') return { ok: false as const, error: '접수 번호를 확인해 주세요.' };
+  if (!isDbConfigured()) return { ok: false as const, error: 'DB 연결 전에는 공개할 수 없습니다.' };
+  const { readWarehouse, markWarehouseApproved } = await import('@/lib/warehouse-store');
+  const { WAREHOUSE_PRIVATE_DISCLOSURE, WAREHOUSE_PUBLIC_DISCLOSURE } = await import('@/lib/warehouse-profile');
+  const { warehouseApprovalListing, warehouseListingId } = await import('@/lib/warehouse-approval');
+  const { validateApprovalListing } = await import('@/lib/partner-approval');
+  const { geocodeRegion } = await import('@/lib/geocode');
+  const { getAdminListing } = await import('@/lib/listings');
+  try {
+    const previous = await readWarehouse(id);
+    if (!previous) return { ok: false as const, error: '창고 등록을 찾을 수 없습니다.' };
+    if (previous.doc.revision !== revision) return { ok: false as const, error: '등록 정보가 바뀌었습니다. 새로고침한 뒤 최신 내용을 확인하고 승인해 주세요.' };
+    const profile = previous.doc.profile;
+    if (profile.disclosure === WAREHOUSE_PRIVATE_DISCLOSURE) return { ok: false as const, error: '비공개 매칭만 희망한 등록입니다. 등록자 동의를 받은 뒤 공개 희망 범위를 바꿔 저장해 주세요.' };
+    const listingId = warehouseListingId(id);
+    const existing = await getAdminListing(listingId);
+    if (existing && existing.type !== 'warehouse') return { ok: false as const, error: '같은 ID의 다른 유형 매물이 있습니다. 매물 관리에서 확인해 주세요.' };
+    const point = await geocodeRegion([profile.province, profile.district, profile.dong].filter(Boolean).join(' '))
+      ?? await geocodeRegion(`${profile.province} ${profile.district}`)
+      ?? (existing ? { lat: existing.lat, lng: existing.lng } : null);
+    if (!point) return { ok: false as const, error: `소재지(${profile.province} ${profile.district})의 위치를 찾지 못했습니다. 시·군·구를 고쳐 저장하거나 매물 등록 화면에서 직접 만들어 주세요.` };
+    const approvedProfile = { ...profile, disclosure: WAREHOUSE_PUBLIC_DISCLOSURE };
+    const { value, errors } = validateApprovalListing(warehouseApprovalListing(id, approvedProfile, point, existing));
+    if (Object.keys(errors).length) return { ok: false as const, error: `공개 정보를 확인해 주세요: ${Object.values(errors).join(' ')}` };
+    if (existing) { if (!(await updateListing(listingId, value))) return { ok: false as const, error: '매물을 찾을 수 없습니다.' }; }
+    else if ((await insertListing(value)) === 'duplicate') return { ok: false as const, error: '같은 매물이 이미 있습니다. 새로고침 후 다시 시도해 주세요.' };
+    await setListingVisibility(listingId, 'published');
+    const view = await markWarehouseApproved(id, previous, approvedProfile, listingId);
+    for (const path of ['/admin', '/warehouses', '/compare', `/warehouses/${listingId}`]) revalidatePath(path);
+    return { ok: true as const, ...view };
+  } catch (err) { return { ok: false as const, error: err instanceof Error ? err.message : '공개하지 못했습니다.' }; }
+}

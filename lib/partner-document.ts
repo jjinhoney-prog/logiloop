@@ -19,7 +19,7 @@ export function decodePartnerDocument(note: string): PartnerDocument | null {
 export function partnerView(doc: PartnerDocument): PartnerView {
   return { profile: doc.profile, stage: doc.stage, revision: doc.revision };
 }
-export function validPartnerAccess(doc: PartnerDocument, token: string, now = Date.now()) {
+export function validPartnerAccess(doc: { accessHash: string; expiresAt: number }, token: string, now = Date.now()) {
   return /^[a-f0-9]{64}$/.test(token) && doc.expiresAt > now && safeEqual(doc.accessHash, hashPartnerToken(token));
 }
 

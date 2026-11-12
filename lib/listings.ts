@@ -47,7 +47,7 @@ function toListing(row: ListingRow): Listing {
     ...(row.type === 'partner' && row.public_partner ? {publicPartner: normalizePublicPartner(row.public_partner)} : {}),
     operatingRegions: row.type === 'partner' ? normalizeOperatingRegions(row.operating_regions) : undefined,
     id: row.id,
-    isExample: row.type === 'partner' && row.id.startsWith('registered-partner-') ? false : undefined,
+    isExample: row.id.startsWith('registered-partner-') || row.id.startsWith('registered-warehouse-') ? false : undefined,
     type: row.type,
     name: row.name,
     region: row.region,

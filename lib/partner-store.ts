@@ -57,8 +57,11 @@ export async function rotatePartnerLink(id: number) {
   const previous = await readPartner(id);
   if (!previous) throw new Error('간편 등록된 업체를 찾을 수 없습니다.');
   const { token, ...access } = newAccess();
-  const doc = { ...previous.doc, ...access, revision: randomUUID() };
+  const revision = randomUUID();
+  // 링크만 바꾼 것은 내용 변경이 아니므로 공개 중 상태를 유지한다.
+  const approval = previous.doc.approval?.revision === previous.doc.revision ? { ...previous.doc.approval, revision } : previous.doc.approval;
+  const doc = { ...previous.doc, ...access, revision, ...(approval ? { approval } : {}) };
   const { data, error } = await db().from('inquiries').update({ note: serialize(doc), updated_at: new Date(Math.max(Date.now(), Date.parse(previous.updatedAt) + 1)).toISOString() }).eq('id', id).eq('kind', 'partnership').eq('updated_at', previous.updatedAt).select('id');
   if (error || !data?.length) throw new Error('링크를 발급하지 못했습니다. 새로고침 후 다시 시도해 주세요.');
-  return { token, ...partnerView(doc) };
+  return { token, ...partnerView(doc), review: doc.review, approval: doc.approval };
 }

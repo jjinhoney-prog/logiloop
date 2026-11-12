@@ -39,11 +39,11 @@ export function approvalListing(id: number, profile: PartnerProfile, point: Poin
   };
 }
 
-/** 관리자 폼과 같은 검증(상세 주소·로고 형식·좌표)을 거친다. */
+/** 관리자 폼과 같은 검증(상세 주소·로고 형식·좌표)을 거친다. 3PL·창고 매물 공통. */
 export function validateApprovalListing(input: ListingInput): { value: ListingInput; errors: ListingFormErrors } {
   const form = new FormData();
   const put = (key: string, value: unknown) => { if (value !== undefined && value !== null) form.set(key, typeof value === 'string' ? value : JSON.stringify(value)); };
-  put('type', 'partner'); put('id', input.id); put('name', input.name); put('region', input.region); put('province', input.province);
+  put('type', input.type); put('id', input.id); put('area', input.area === undefined ? undefined : String(input.area)); put('height', input.height); put('power', input.power); put('name', input.name); put('region', input.region); put('province', input.province);
   put('district', input.district); put('temperature', input.temperature); put('capacity', input.capacity); put('price', input.price);
   put('available', input.available); put('status', input.status); put('tags', input.tags.join(',')); put('service', input.service);
   put('suitability', input.suitability); put('limitation', input.limitation); put('imageUrl', input.imageUrl ?? '');

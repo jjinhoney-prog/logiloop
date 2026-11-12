@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Archive, ArrowUpRight, ClipboardList, Eye, EyeOff, Filter, LogOut, MailWarning, Pencil, Plus, RotateCcw, Save, Warehouse, X } from 'lucide-react';
 import { changeListingVisibility, logout, saveInquiryProgress, type ActionResult } from '@/app/admin/actions';
 import { PartnerTable } from './partner-table';
+import { WarehouseTable } from './warehouse-table';
+import { isWarehouseRegistration } from '@/lib/warehouse-profile';
 import { DeleteListingButton, ListingPhoto } from './listing-controls';
 import { useToast } from '@/components/providers/toast';
 import { DemoNotice, Empty, PageHeading } from '@/components/ui';
@@ -14,7 +16,7 @@ import { inquiryStages, listingHref, tiers, visibilityLabels } from '@/lib/data'
 import { formatKst } from '@/lib/inquiry-email';
 import type { AdminListing, InquiryRecord, InquiryStage, MailStatus, Visibility } from '@/lib/types';
 
-export type AdminTab = 'inquiries' | 'listings' | 'partners';
+export type AdminTab = 'inquiries' | 'listings' | 'partners' | 'warehouses';
 
 const mailLabels: Record<MailStatus, string> = { pending: '발송 대기', sent: '발송', failed: '발송 실패', skipped: '메일 미설정' };
 
@@ -27,6 +29,8 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
   const staged = inquiries.filter((r) => stage === '전체' || r.stage === stage);
   const filtered = sort === 'lead' ? [...staged].sort((a, b) => leadOrder[inquiryLead(a)] - leadOrder[inquiryLead(b)]) : staged;
   const current = inquiries.find((r) => r.id === active);
+  const warehouseRows = inquiries.filter(isWarehouseRegistration);
+  const partnerRows = inquiries.filter((r) => r.kind === 'partnership' && !isWarehouseRegistration(r));
   const stats = [
     [ClipboardList, '신규 접수', `${inquiries.filter((r) => r.stage === '접수').length}건`, '아직 연락하지 않은 상담'],
     [MailWarning, '메일 발송 실패', `${inquiries.filter((r) => r.mailStatus === 'failed').length}건`, 'DB에는 저장됨 · 직접 확인 필요'],
@@ -71,13 +75,14 @@ export default function Admin({ dbReady, inquiries, listings, initialTab }: { db
             <button role="tab" id="inquiries-tab" aria-controls="admin-panel" aria-selected={tab === 'inquiries'} onClick={() => setTab('inquiries')}>
               상담 접수<span>{inquiries.length}</span>
             </button>
-            <button role="tab" id="partners-tab" aria-controls="admin-panel" aria-selected={tab === 'partners'} onClick={() => setTab('partners')}>3PL 업체<span>{inquiries.filter(r => r.kind === 'partnership').length}</span></button>
+            <button role="tab" id="partners-tab" aria-controls="admin-panel" aria-selected={tab === 'partners'} onClick={() => setTab('partners')}>3PL 업체<span>{partnerRows.length}</span></button>
+            <button role="tab" id="warehouses-tab" aria-controls="admin-panel" aria-selected={tab === 'warehouses'} onClick={() => setTab('warehouses')}>창고 등록<span>{warehouseRows.length}</span></button>
             <button role="tab" id="listings-tab" aria-controls="admin-panel" aria-selected={tab === 'listings'} onClick={() => setTab('listings')}>
               매물 관리<span>{listings.length}</span>
             </button>
           </div>
           <section className="panel admin-table-panel" id="admin-panel" role="tabpanel" aria-labelledby={`${tab}-tab`}>
-            {tab === 'partners' ? <PartnerTable inquiries={inquiries.filter(r => r.kind === 'partnership')} /> : tab === 'inquiries' ? (
+            {tab === 'partners' ? <PartnerTable inquiries={partnerRows} /> : tab === 'warehouses' ? <WarehouseTable inquiries={warehouseRows} /> : tab === 'inquiries' ? (
               <>
                 <div className="admin-table-top">
                   <h2>상담 접수 목록</h2>

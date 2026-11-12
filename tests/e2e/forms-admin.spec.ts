@@ -147,9 +147,30 @@ test.describe('admin workspace', () => {
   });
 });
 
-test('warehouse suppliers retain their separate participation form', async ({ page }) => {
+test('warehouse owners register on their own structured form', async ({ page }) => {
   await page.goto('/partnership');
   await page.getByRole('link', { name: '창고·물류센터 임대 등록', exact: true }).click();
   await expect(page).toHaveURL(/\/partnership\/warehouse$/);
-  await expect(page.getByRole('radio', { name: /창고·물류센터 임대 홍보/ })).toBeChecked();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('창고·물류센터 임대 등록');
+
+  await page.getByRole('button', { name: /창고 임대 등록 신청/ }).click();
+  await expect(page.locator('#warehouse-company')).toBeFocused();
+
+  let posted: Record<string, unknown> | undefined;
+  await page.route('**/api/partnership/warehouse', route => { posted = route.request().postDataJSON(); return route.fulfill({ status: 201, json: { ok: true, id: 7, token: 'b'.repeat(64) } }); });
+  await page.locator('#warehouse-company').fill('창고 소유주');
+  await page.locator('#warehouse-name').fill('담당자');
+  await page.locator('#warehouse-phone').fill('0511234567');
+  await page.locator('#warehouse-province').selectOption('부산');
+  await page.locator('#warehouse-district').fill('강서구');
+  await page.getByRole('radio', { name: '물류센터', exact: true }).check();
+  await page.getByRole('checkbox', { name: '상온', exact: true }).check();
+  await page.locator('#warehouse-areaValue').fill('1,200');
+  await page.locator('#warehouse-rent').fill('월 1,800만원');
+  await page.locator('#warehouse-consent').check();
+  await page.getByRole('button', { name: /창고 임대 등록 신청/ }).click();
+
+  await expect(page.getByRole('heading', { name: '창고 등록이 접수되었습니다.' })).toBeVisible();
+  await expect(page.getByLabel('창고 정보 보완 링크')).toHaveValue(/partnership\/warehouse\/manage#7\./);
+  expect(posted).toMatchObject({ consent: true, website: '', profile: { province: '부산', district: '강서구', facilityType: '물류센터', temperatures: ['상온'], areaValue: '1,200', areaUnit: '평', rent: '월 1,800만원' } });
 });
