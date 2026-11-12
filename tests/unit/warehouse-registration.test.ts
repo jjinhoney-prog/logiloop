@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { validateApprovalListing } from '@/lib/partner-approval';
+import { formatKrw, parseKrw, warehouseDepositCheck } from '@/lib/warehouse-deposit';
 import { warehouseApprovalListing } from '@/lib/warehouse-approval';
 import { emptyWarehouse, isWarehouseRegistration, normalizeWarehouse, warehouseAreaM2, warehouseReadiness, type WarehouseProfile } from '@/lib/warehouse-profile';
 
@@ -77,5 +78,31 @@ describe('warehouse approval listing', () => {
   test('rejects a street address typed into public fields', () => {
     const { errors } = validateApprovalListing(warehouseApprovalListing(12, { ...profile, introduction: '골든루트로 123 위치' }, point));
     expect(errors.suitability).toBeTruthy();
+  });
+});
+
+describe('warehouse deposit check (internal only)', () => {
+  test('parses Korean money strings', () => {
+    expect(parseKrw('월 1,500만원')).toBe(15_000_000);
+    expect(parseKrw('1억 2,000만원')).toBe(120_000_000);
+    expect(parseKrw('평당 2.5만원')).toBe(25_000);
+    expect(parseKrw('3천만원')).toBe(30_000_000);
+    expect(parseKrw('협의')).toBeUndefined();
+    expect(parseKrw('1,400~1,500만원')).toBeUndefined();
+    expect(formatKrw(90_000_000)).toBe('9,000만원');
+    expect(formatKrw(150_000_000)).toBe('1억 5,000만원');
+  });
+
+  test('uses 6 months for logistics centers and 10 for warehouses and factories', () => {
+    expect(warehouseDepositCheck({ ...profile, deposit: '9,000만원' })).toMatchObject({ months: 6, base: 90_000_000, result: 'match' });
+    expect(warehouseDepositCheck({ ...profile, facilityType: '창고' })).toMatchObject({ months: 10, base: 150_000_000, owner: 100_000_000, result: 'differs' });
+    expect(warehouseDepositCheck({ ...profile, rent: '평당 2만원', facilityType: '공장' })).toMatchObject({ monthlyRent: 20_000_000, base: 200_000_000 });
+  });
+
+  test('never guesses when rent or type is unclear and leaves the owner value alone', () => {
+    expect(warehouseDepositCheck({ ...profile, rent: '협의' }).result).toBe('unknown');
+    expect(warehouseDepositCheck({ ...profile, facilityType: '' }).result).toBe('unknown');
+    const listing = validateApprovalListing(warehouseApprovalListing(12, { ...profile, facilityType: '창고' }, point)).value;
+    expect(listing.price).toBe('월 1,500만원 · 보증금 1억원');
   });
 });

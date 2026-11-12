@@ -8,6 +8,7 @@ import { approvalStatus } from '@/lib/partner-approval';
 import { partnerStages, type PartnerStage } from '@/lib/partner-profile';
 import { WAREHOUSE_PRIVATE_DISCLOSURE, warehouseAreaLabel, type WarehouseView } from '@/lib/warehouse-profile';
 import { WarehouseProfileEditor } from '@/components/partnership/warehouse-form';
+import { warehouseDepositCheck } from '@/lib/warehouse-deposit';
 import type { InquiryRecord } from '@/lib/types';
 
 const approvalTone = (status: string) => status === '공개 중' ? 'live' : status === '변경 승인 대기' ? 'pending' : 'none';
@@ -61,12 +62,14 @@ function WarehouseApprovePanel({ id, view, onApproved }: { id: number; view: War
   const [error, setError] = useState('');
   const status = approvalStatus(view);
   const blocked = view.profile.disclosure === WAREHOUSE_PRIVATE_DISCLOSURE;
+  const deposit = warehouseDepositCheck(view.profile);
   const label = status === '미공개' ? '승인하고 창고 목록에 공개' : status === '변경 승인 대기' ? '변경 내용 승인·반영' : '최신 정보로 다시 반영';
   return <section className="partner-approve" aria-labelledby={`warehouse-approve-${id}`}>
     <h4 id={`warehouse-approve-${id}`}>창고 목록 공개 · {status}</h4>
     <p className="muted small">{blocked ? '등록자가 비공개 매칭만 희망했습니다. 등록자 동의를 받은 뒤 공개 희망 범위를 바꿔 저장해야 공개할 수 있습니다.'
       : status === '변경 승인 대기' ? '공개 후 등록자가 정보를 다시 저장했습니다. 승인하면 지역·면적·온도·임대료·보증금·입주 시점·층고·전력·소개가 목록에 반영됩니다. 담당자가 고친 검증 표시·태그·정렬은 유지됩니다.'
       : '승인하면 시·군·구와 읍·면·동, 시설 유형·면적·온도·임대료·보증금·입주 시점·층고·전력·소개로 창고 목록에 바로 공개합니다. 등록자·연락처·상세 주소·사진 링크는 공개하지 않습니다. 저장하지 않은 수정사항은 먼저 저장하세요.'}</p>
+    <div className={`warehouse-deposit-check deposit-${deposit.result}`}><strong>보증금 내부 계산 기준 · 공개 안 함</strong><p>{deposit.message}</p><small>공개 목록에는 등록자가 적은 보증금({view.profile.deposit || '미입력 → 임대 조건 협의'})만 나갑니다. 시설 유형은 등록자 선택값이므로 실제 용도를 확인해 주세요.</small></div>
     {view.approval && <p className="muted small">마지막 승인 {new Date(view.approval.at).toLocaleString('ko-KR')}</p>}
     <button type="button" className="button button-dark" disabled={pending || blocked} onClick={async () => {
       setPending(true); setError('');
