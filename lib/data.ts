@@ -76,6 +76,8 @@ export function temperatureTone(temperature: string): TemperatureTone {
 /** 지음부동산 홈페이지 매물 상세 주소만 출처로 허용한다(supabase/002_source_url.sql과 같은 규칙). */
 export const SOURCE_URL_PATTERN = /^https:\/\/ziumrealty\.com\/item\/view\/\d{1,8}$/;
 
+/** 임대인이 창고 등록 폼으로 직접 올리고 관리자가 승인한 창고. 지음이 서류·현장을 확인한 매물과 구분한다. */
+export const isOwnerRegisteredListing = (item: Pick<Listing, 'id'>) => item.id.startsWith('registered-warehouse-');
 export const isExampleListing = (item: Pick<Listing, 'sourceUrl' | 'isExample'>) => item.isExample ?? !item.sourceUrl;
 
 const SQM_PER_PYEONG = 3.3058;

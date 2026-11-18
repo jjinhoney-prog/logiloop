@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Truck, Warehouse } from 'lucide-react';
-import { capacityLabel, isExampleListing, listingHref, temperatureTone } from '@/lib/data';
+import { capacityLabel, isExampleListing, isOwnerRegisteredListing, listingHref, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { InfoTooltip } from './info-tooltip';
 import { CompareToggle } from './compare-toggle';
@@ -74,6 +74,7 @@ export function CatalogCard({ item }: { item: Listing }) {
         <div className="cover-top">
           <TypeBadge type={item.type} />
           {isExampleListing(item) && <span className="example-label">예시</span>}
+          {isOwnerRegisteredListing(item) && <span className="example-label">임대인 등록</span>}
         </div>
         {!item.imageUrl && (
           <div className="cover-main">

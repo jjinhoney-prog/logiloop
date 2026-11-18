@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, CircleHelp, MapPin, Truck, Warehouse } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { DemoNotice, PageHeading, SectionTitle, TempChip } from '@/components/ui';
-import { capacityLabel, isExampleListing, temperatureTone } from '@/lib/data';
+import { capacityLabel, isExampleListing, isOwnerRegisteredListing, temperatureTone } from '@/lib/data';
 import type { Listing } from '@/lib/types';
 import { warehouseReviewQuestions } from '@/lib/listing-seo';
 import { warehouseRegions, matchesWarehouseRegion, warehouseRegionHref } from '@/lib/warehouse-regions';
@@ -20,6 +20,7 @@ export default function Detail({ item }: { item: Listing }) {
   const officialMedia = !warehouse ? officialPartnerMedia[item.id] : undefined;
   const logoOrPhoto = item.imageUrl || officialMedia?.logo.url;
   const example = isExampleListing(item);
+  const ownerRegistered = isOwnerRegisteredListing(item);
   const region = warehouseRegions.find((entry) => matchesWarehouseRegion(item, entry));
   const Icon = warehouse ? Warehouse : Truck;
   const specs: [string, ReactNode][] = [
@@ -45,7 +46,7 @@ export default function Detail({ item }: { item: Listing }) {
       <PageHeading eyebrow={warehouse ? 'LOGISTICS SPACE' : ''} title={item.name} description={!warehouse && item.operatingRegions?.length ? item.operatingRegions.map(operatingRegionLabel).join(' · ') : item.district} />
       </div>
       <DemoNotice>
-        {example ? '가상 예시 자료입니다. 실제 업체·공실·가격·수용 능력을 나타내지 않습니다.' : warehouse ? '지음부동산중개법인 등록 매물입니다. 임대 조건과 입주 가능일은 상담 시 다시 확인합니다.' : '업체 등록 정보를 기준으로 한 소개입니다. 실제 물량 수용 여부는 요청 후 확인합니다.'}
+        {example ? '가상 예시 자료입니다. 실제 업체·공실·가격·수용 능력을 나타내지 않습니다.' : ownerRegistered ? '임대인이 직접 등록한 정보입니다. 지역·면적·임대 조건은 등록자 입력값이며, 서류·현장 확인 상태는 아래에서 구분합니다. 입주 가능일과 조건은 상담 시 다시 확인합니다.' : warehouse ? '지음부동산중개법인 등록 매물입니다. 임대 조건과 입주 가능일은 상담 시 다시 확인합니다.' : '업체 등록 정보를 기준으로 한 소개입니다. 실제 물량 수용 여부는 요청 후 확인합니다.'}
       </DemoNotice>
       <div className="detail-layout">
         <div>
@@ -86,7 +87,7 @@ export default function Detail({ item }: { item: Listing }) {
           {!warehouse && item.publicPartner && <section className="panel"><h2>업체 운영 조건</h2><p>취급 품목: {item.publicPartner.categories.join(' · ') || '확인 필요'}</p>{item.publicPartner.centers.map((c,i)=><div className="public-center" key={i}><h3>{c.province} {c.district}</h3><p>{c.temperatures.join(' · ')} / {c.services.join(' · ')}</p><dl className="spec-grid"><div><dt>보관 총능력</dt><dd>{c.total||'확인 필요'}</dd></div><div><dt>현재 여유량</dt><dd>{c.spare||'확인 필요'}</dd></div><div><dt>수용 시작</dt><dd>{c.availableAt||'협의 필요'}</dd></div><div><dt>확인 기준일</dt><dd>{c.checkedAt||'확인 필요'}</dd></div></dl></div>)}</section>}
           <LocationSection item={item} />
           <section className="panel">
-            <SectionTitle title="확인 상태를 구분합니다" help={`기준일: ${example ? '예시 자료' : '지음부동산 등록 정보'} · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.`} />
+            <SectionTitle title="확인 상태를 구분합니다" help={`기준일: ${example ? '예시 자료' : ownerRegistered ? '임대인 등록 정보' : '지음부동산 등록 정보'} · 가용 조건은 제안 전에 다시 확인합니다. 현장 확인이 모든 서비스 품질을 보증하지 않습니다.`} />
             <div className="verification-list">
               {item.checks.map((check, i) => {
                 const pending = !check || check.includes('대기') || check.includes('미확인');

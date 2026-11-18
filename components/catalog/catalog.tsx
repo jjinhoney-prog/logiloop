@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { CatalogCard, DemoNotice, Empty, PageHeading } from '@/components/ui';
-import { isExampleListing } from '@/lib/data';
+import { isExampleListing, isOwnerRegisteredListing } from '@/lib/data';
 import { filterListings } from '@/lib/logic';
 import type { Listing, ListingType } from '@/lib/types';
 import { Filters, type FilterState } from './filters';
@@ -95,7 +95,7 @@ export default function Catalog({ type, items, region, initial }: { type: Listin
       <ol className="catalog-steps" aria-label="목록 이용 순서"><li>01 · 조건으로 찾기</li><li>02 · 비교함 담기</li><li>03 · 후보 검토 요청</li></ol>
       {!warehouse && <details className="catalog-explainer"><summary>3PL 이용 안내</summary><strong>3PL: 보관·입출고 등 물류업무를 외부 업체에 맡기는 방식</strong><p>공개된 운영 정보를 기준으로 살펴보는 목록입니다. 처리 가능량과 내 조건 수용 여부는 별도 확인합니다.</p></details>}
       <DemoNotice>
-        {region ? '지음부동산 등록 매물입니다. 현재 공실·임대 조건·입주 가능일은 상담 시 다시 확인합니다.' : examplesOnly ? '현재 목록은 부울경 가상 예시입니다. 물류 요청은 전국 어디든 검토 가능합니다.' : '‘예시’ 표시가 없는 매물은 지음부동산 등록 매물입니다.'}
+        {region ? `${items.some(isOwnerRegisteredListing) ? '지음부동산 등록 매물과 ‘임대인 등록’ 표시가 붙은 임대인 직접 등록 매물입니다.' : '지음부동산 등록 매물입니다.'} 현재 공실·임대 조건·입주 가능일은 상담 시 다시 확인합니다.` : examplesOnly ? '현재 목록은 부울경 가상 예시입니다. 물류 요청은 전국 어디든 검토 가능합니다.' : '‘예시’ 표시가 없는 매물은 지음부동산 등록 매물입니다. ‘임대인 등록’ 표시는 임대인이 직접 올린 정보로, 상담 시 서류·현장을 확인합니다.'}
       </DemoNotice>
       <Filters warehouse={warehouse} fixedRegion={region?.name} value={filters} serviceOptions={serviceOptions} onChange={change} onReset={reset} />
       {!warehouse && <div className="tags" aria-label="선택한 검색 조건">{Object.entries(filters).filter(([key,value])=>value&&value!==initialFilters[key as keyof FilterState]).map(([key,value])=><button className="text-button" key={key} onClick={()=>change({[key]:initialFilters[key as keyof FilterState]})}>{value} 해제</button>)}</div>}
